@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Token" ADD COLUMN     "lastViewReset" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

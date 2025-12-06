@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Token" ALTER COLUMN "progress" SET DATA TYPE DOUBLE PRECISION;
