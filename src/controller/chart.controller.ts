@@ -56,7 +56,7 @@ export class ChartController {
 
       // If no trades exist, create a baseline candle from 4.4k to current market cap
       if (trades.length === 0) {
-        const baselineCandle = createBaselineCandle(
+        const baselineCandle = await createBaselineCandle(
           token,
           startTime,
           interval as string
@@ -73,7 +73,7 @@ export class ChartController {
       }
 
       // Process trades into OHLCV candles based on interval
-      const chartData = generateOHLCVCandles(
+      const chartData = await generateOHLCVCandles(
         trades,
         interval as string,
         startTime

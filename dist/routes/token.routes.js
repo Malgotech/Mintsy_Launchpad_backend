@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const token_controller_1 = require("../controller/token.controller");
+const tokenRouter = (0, express_1.Router)();
+const tokenController = new token_controller_1.TokenController();
+tokenRouter.get("/", tokenController.getTokens);
+tokenRouter.get("/live", tokenController.getLiveTokens);
+tokenRouter.post("/", tokenController.createToken);
+tokenRouter.get("/:id", tokenController.getTokenById);
+tokenRouter.get("/details/:symbol", tokenController.getCoinDetails);
+tokenRouter.put("/:id", tokenController.updateToken);
+tokenRouter.put("/progress/:id", tokenController.updateTokenProgress);
+tokenRouter.put("/lp-status/:id", tokenController.updateLpStatus);
+tokenRouter.get("/:id/holders", tokenController.getTokenHolders);
+tokenRouter.get("/:coinId/top-holders", tokenController.getTopHoldersByCoinId);
+tokenRouter.post("/:coinId/similar", tokenController.getSimilarCoins);
+tokenRouter.get("/tag/:tagId", tokenController.getTokensByTag);
+tokenRouter.post(
+  "/updateGraduationStatus",
+  tokenController.updateGraduationStatus
+);
+exports.default = tokenRouter;

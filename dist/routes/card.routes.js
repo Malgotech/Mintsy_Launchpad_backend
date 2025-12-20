@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const card_controller_1 = require("../controller/card.controller");
+const cardRouter = (0, express_1.Router)();
+const cardController = new card_controller_1.CardController();
+cardRouter.get("/trending", cardController.getTrendingCards);
+cardRouter.get("/alpha-spot", cardController.getAlphaSpot);
+cardRouter.get("/featured", cardController.getFeaturedCards);
+cardRouter.get("/filtered", cardController.getFilteredTokens);
+cardRouter.post("/hide", cardController.hideCard);
+cardRouter.get("/hidden", cardController.getHiddenCards);
+cardRouter.post("/unhide", cardController.unhideCard);
+exports.default = cardRouter;
