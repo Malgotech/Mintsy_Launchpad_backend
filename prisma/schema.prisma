@@ -1,233 +1,201 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url= env("DATABASE_URL")
-
+  url      = env("DATABASE_URL")
 }
 
 /// User accounts for creators, traders, and admins
 model User {
-  id          Int       @id @default(autoincrement())
-  userAccount String    @unique
-  name        String?
-  avatarUrl   String?
-  bio         String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastActive  DateTime  @default(now())
-  isActive    Boolean   @default(false)
-  tokens      Token[]   @relation("TokenCreator")
-  trades      Trade[]
-  socialLinks SocialLink[]
-  sessions    Session[]
-  watchlists  Watchlist[]
-  isVerified Boolean @default(false)
-  preferences UserPreferences?
-  userTokens  UserToken[]
-  hiddenCards HiddenCard[]
+  id                     Int                     @id @default(autoincrement())
+  userAccount            String                  @unique
+  name                   String?
+  avatarUrl              String?
+  bio                    String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  lastActive             DateTime                @default(now())
+  isActive               Boolean                 @default(false)
+  isVerified             Boolean                 @default(false)
+  referralCode           String?
+  following              Follow[]                @relation("UserFollowing")
+  followers              Follow[]                @relation("UserFollowers")
+  hiddenCards            HiddenCard[]
   liveStreamChatMessages LiveStreamChatMessage[] @relation("UserLiveStreamChatMessages")
-  followers Follow[] @relation("UserFollowers")
-  following Follow[] @relation("UserFollowing")
-  referrals   Referral[] @relation("Referrer")
-  referredBy  Referral[] @relation("Referred")
-  referralCode String?
+  referredBy             Referral[]              @relation("Referred")
+  referrals              Referral[]              @relation("Referrer")
+  sessions               Session[]
+  socialLinks            SocialLink[]
+  tokens                 Token[]                 @relation("TokenCreator")
+  trades                 Trade[]
+  preferences            UserPreferences?
+  userTokens             UserToken[]
+  watchlists             Watchlist[]
 }
 
 /// Meme coin/token created and traded on the platform
 model Tag {
-  id      String    @id 
-  label   String
-  active  Boolean   @default(true)
-  count   Int       @default(0)
-  tokens  Token[]
+  id     String  @id
+  label  String
+  active Boolean @default(true)
+  count  Int     @default(0)
+  tokens Token[] @relation("TagToToken")
 }
 
 model Token {
-  id            Int         @id @default(autoincrement())
-  mintAccount   String?     @unique
-  symbol        String      @unique
-  name          String
-  description   String?
-  imageUrl      String?
-  cid           String?     // Added for IPFS content identifier
-  creatorAccount String
-  creator       User        @relation("TokenCreator", fields: [creatorAccount], references: [userAccount])
-  createdAt     DateTime    @default(now())
-  market        Market?
-  bondingCurve  BondingCurve?
-  liquidityPool LiquidityPool?
-  trades        Trade[]
-  status        TokenStatus @default(PENDING)
-  supply        Float       @default(1000000000)
-  decimals      Int         @default(9)
-  socials       SocialLink[]
-  featured      Boolean     @default(false)
-  blacklisted   Boolean     @default(false)
-  flagged       Boolean     @default(false)
-  initialPrice  Float?
-  graduatedAt   DateTime?
-  finalMarketCap Float?
-  poolAddress   String?
-  advanceCards AdvanceCard[]
-  graduationStatus String?  @default("PENDING")
+  id                     Int                     @id @default(autoincrement())
+  mintAccount            String?                 @unique
+  symbol                 String                  @unique
+  name                   String
+  description            String?
+  imageUrl               String?
+  cid                    String?
+  creatorAccount         String
+  createdAt              DateTime                @default(now())
+  status                 TokenStatus             @default(PENDING)
+  supply                 Float                   @default(1000000000)
+  decimals               Int                     @default(9)
+  featured               Boolean                 @default(false)
+  blacklisted            Boolean                 @default(false)
+  flagged                Boolean                 @default(false)
+  initialPrice           Float?
+  graduatedAt            DateTime?
+  finalMarketCap         Float?
+  poolAddress            String?
+  graduationStatus       String?                 @default("PENDING")
   graduationRequirements Json?
-  lastPrice    Float?
-  lastPriceUpdate DateTime?  @updatedAt
-  userCount Int?
-  progress Float?
-  durationInDays Int? 
-  apy Float?
-  network String  @default("solana")
-  timeAgo String?
-  readMoreLink String?
-  creatorVerified Boolean @default(false)
-  replyCount Int @default(0)
-  nsfw Boolean @default(false)
-  tags    Tag[]  // Many-to-many relation with Tag model
-  watchlists Watchlist[] // Many-to-many relation with Watchlist model
-  hiddenCards HiddenCard[]
-  isLive  Boolean @default(false)
-  userTokens    UserToken[]
+  lastPrice              Float?
+  lastPriceUpdate        DateTime?               @updatedAt
+  userCount              Int?
+  progress               Float?
+  durationInDays         Int?
+  apy                    Float?
+  network                String                  @default("solana")
+  timeAgo                String?
+  readMoreLink           String?
+  creatorVerified        Boolean                 @default(false)
+  replyCount             Int                     @default(0)
+  nsfw                   Boolean                 @default(false)
+  isLive                 Boolean                 @default(false)
+  viewCount              Int?                    @default(0)
+  lastViewReset          DateTime?               @default(now())
+  rewardStatus           String?                 @default("PENDING")
+  advanceCards           AdvanceCard[]
+  bondingCurve           BondingCurve?
+  hiddenCards            HiddenCard[]
+  liquidityPool          LiquidityPool?
   liveStreamChatMessages LiveStreamChatMessage[]
-  viewCount Int? @default(0)
-  lastViewReset DateTime? @default(now())
-  rewardStatus String?  @default("PENDING")
-  
-}
-
-enum TokenStatus {
-  PENDING
-  ACTIVE
-  SUSPENDED
-  DELISTED
+  market                 Market?
+  socials                SocialLink[]
+  creator                User                    @relation("TokenCreator", fields: [creatorAccount], references: [userAccount])
+  trades                 Trade[]
+  userTokens             UserToken[]
+  tags                   Tag[]                   @relation("TagToToken")
+  watchlists             Watchlist[]             @relation("TokenToWatchlist")
 }
 
 /// Market for each token (orderbook, price, volume)
 model Market {
-  id           Int       @id @default(autoincrement())
-  tokenId      Int       @unique
-  token        Token     @relation(fields: [tokenId], references: [id])
-  currentPrice Float?
-  priceChange  Float     @default(0)
-  marketCap Float?
-  ratio Float?
-  priceChange24h  Float     @default(0)
-  volume24h    Float     @default(0)
-  liquidity    Float     @default(0)
-  trades       Trade[]
-  solCollected Float? @default(0) 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             Int      @id @default(autoincrement())
+  tokenId        Int      @unique
+  currentPrice   Float?
+  priceChange    Float    @default(0)
+  marketCap      Float?
+  ratio          Float?
+  priceChange24h Float    @default(0)
+  volume24h      Float    @default(0)
+  liquidity      Float    @default(0)
+  solCollected   Float?   @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  token          Token    @relation(fields: [tokenId], references: [id])
+  trades         Trade[]
 }
 
 /// Trade history (buys/sells)
 model Trade {
-  id         Int       @id @default(autoincrement())
-  userId     Int
-  user       User      @relation(fields: [userId], references: [id])
-  tokenId    Int
-  token      Token     @relation(fields: [tokenId], references: [id])
-  marketId   Int
-  market     Market    @relation(fields: [marketId], references: [id])
-  amount     Float
-  price      Float?
-  marketCap  Float?
-  side       TradeSide
-  txHash     String    @unique
-  createdAt  DateTime  @default(now())
-}
-
-enum TradeSide {
-  BUY
-  SELL
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenId   Int
+  marketId  Int
+  amount    Float
+  price     Float?
+  marketCap Float?
+  side      TradeSide
+  txHash    String    @unique
+  createdAt DateTime  @default(now())
+  market    Market    @relation(fields: [marketId], references: [id])
+  token     Token     @relation(fields: [tokenId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 /// Bonding curve parameters for each token
 model BondingCurve {
-  id         Int       @id @default(autoincrement())
-  tokenId    Int       @unique
-  token      Token     @relation(fields: [tokenId], references: [id])
-  curveType  CurveType
-  params     Json      // e.g., { "a": 1, "b": 0.01 }
-  createdAt  DateTime  @default(now())
-}
-
-enum CurveType {
-  LINEAR
-  EXPONENTIAL
-  LOGARITHMIC
-  CUSTOM
+  id        Int       @id @default(autoincrement())
+  tokenId   Int       @unique
+  curveType CurveType
+  params    Json
+  createdAt DateTime  @default(now())
+  token     Token     @relation(fields: [tokenId], references: [id])
 }
 
 /// Liquidity pool for each token
 model LiquidityPool {
-  id           Int       @id @default(autoincrement())
-  tokenId      Int       @unique
-  token        Token     @relation(fields: [tokenId], references: [id])
-  baseAsset    String    // e.g., "SOL"
-  baseReserve  Float?
-  tokenReserve Float?
-  lpSupply     Float?
+  id                  Int      @id @default(autoincrement())
+  tokenId             Int      @unique
+  baseAsset           String
+  baseReserve         Float?
+  tokenReserve        Float?
+  lpSupply            Float?
   liquidityPercentage Float?
-  poolAddress  String?
-
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  poolAddress         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  token               Token    @relation(fields: [tokenId], references: [id])
 }
 
 /// Social links for tokens and users (Twitter, Discord, etc.)
 model SocialLink {
-  id        Int       @id @default(autoincrement())
-  url       String
-  type      SocialType
-  userId    Int?
-  user      User?     @relation(fields: [userId], references: [id])
-  tokenId   Int?
-  token     Token?    @relation(fields: [tokenId], references: [id])
-  commentCount Int? @default(0)
- 
-}
-
-enum SocialType {
-  TWITTER
-  DISCORD
-  TELEGRAM
-  WEBSITE
-  OTHER
+  id           Int        @id @default(autoincrement())
+  url          String
+  type         SocialType
+  userId       Int?
+  tokenId      Int?
+  commentCount Int?       @default(0)
+  token        Token?     @relation(fields: [tokenId], references: [id])
+  user         User?      @relation(fields: [userId], references: [id])
 }
 
 /// User sessions for authentication
 model Session {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
   createdAt DateTime @default(now())
   expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 /// User watchlists for favorite tokens
 model Watchlist {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  tokens    Token[]
   name      String   @default("My Watchlist")
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  tokens    Token[]  @relation("TokenToWatchlist")
 }
-
 
 /// Banner settings and content for the platform
 model Banner {
-  id                  Int      @id @default(autoincrement())
-  title               String
-  buttonText          String
-  imageUrl            String?
-  backgroundGradient  String?
+  id                 Int      @id @default(autoincrement())
+  title              String
+  buttonText         String
+  imageUrl           String?
+  backgroundGradient String?
   ctaLink            String
   type               String   @default("create-coin")
   enabled            Boolean  @default(true)
@@ -237,78 +205,78 @@ model Banner {
 }
 
 model AdvanceColumn {
-  id               String    @id @default(uuid())
+  id               String        @id @default(uuid())
   title            String
   order            Int
   type             String
-  filterable       Boolean   @default(true)
-  defaultFilter    Json?     // For sortBy, sortOrder, timeRange
-  availableFilters Json?     // For filter options
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  filterable       Boolean       @default(true)
+  defaultFilter    Json?
+  availableFilters Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   cards            AdvanceCard[]
 }
 
 model AdvanceCard {
-  id               String    @id @default(uuid())
-  columnId         String
-  column           AdvanceColumn @relation(fields: [columnId], references: [id])
-  tokenId          Int?
-  token            Token?    @relation(fields: [tokenId], references: [id])
-  status           String?   @default("PENDING")
-  riskLevel        String?
-  contractAddress  String?
-  createdAt        DateTime  @default(now())
+  id              String        @id @default(uuid())
+  columnId        String
+  tokenId         Int?
+  status          String?       @default("PENDING")
+  riskLevel       String?
+  contractAddress String?
+  createdAt       DateTime      @default(now())
+  column          AdvanceColumn @relation(fields: [columnId], references: [id])
+  token           Token?        @relation(fields: [tokenId], references: [id])
 }
 
 model UserPreferences {
-  id                 Int      @id @default(autoincrement())
-  userId            Int      @unique
-  user              User     @relation(fields: [userId], references: [id])
-  defaultSortBy      String   @default("marketCap")
-  defaultSortOrder   String   @default("desc")
-  autoRefreshInterval Int     @default(30000)
-  pauseOnHover       Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  defaultSortBy       String   @default("marketCap")
+  defaultSortOrder    String   @default("desc")
+  autoRefreshInterval Int      @default(30000)
+  pauseOnHover        Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id])
 }
 
 model HiddenCard {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
   tokenId   Int
-  token     Token    @relation(fields: [tokenId], references: [id])
   hiddenAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  token     Token    @relation(fields: [tokenId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, tokenId])
 }
 
 model Thread {
-  id         Int       @id @default(autoincrement())
-  coin_id    String    @db.VarChar(64)
-  user_id    String    @db.VarChar(64)
-  username   String    @db.VarChar(64)
-  message    String
-  image_url  String?   // optional image
-  likes      Int       @default(0)
-  created_at DateTime  @default(now())
-  replies    Reply[]   // relation to replies
+  id          Int          @id @default(autoincrement())
+  coin_id     String       @db.VarChar(64)
+  user_id     String       @db.VarChar(64)
+  username    String       @db.VarChar(64)
+  message     String
+  image_url   String?
+  likes       Int          @default(0)
+  created_at  DateTime     @default(now())
+  replies     Reply[]
   threadLikes ThreadLike[]
 }
 
 model Reply {
-  id         Int       @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   thread_id  Int
-  thread     Thread    @relation(fields: [thread_id], references: [id], onDelete: Cascade)
-  user_id    String    @db.VarChar(64)
-  username   String    @db.VarChar(64)
+  user_id    String      @db.VarChar(64)
+  username   String      @db.VarChar(64)
   message    String
   image_url  String?
-  likes      Int       @default(0)
-  created_at DateTime  @default(now())
+  likes      Int         @default(0)
+  created_at DateTime    @default(now())
+  thread     Thread      @relation(fields: [thread_id], references: [id], onDelete: Cascade)
   replyLikes ReplyLike[]
 }
 
@@ -317,6 +285,7 @@ model ThreadLike {
   thread_id Int
   user_id   String @db.VarChar(64)
   thread    Thread @relation(fields: [thread_id], references: [id], onDelete: Cascade)
+
   @@unique([thread_id, user_id])
 }
 
@@ -325,80 +294,111 @@ model ReplyLike {
   reply_id Int
   user_id  String @db.VarChar(64)
   reply    Reply  @relation(fields: [reply_id], references: [id], onDelete: Cascade)
+
   @@unique([reply_id, user_id])
 }
 
 /// UserToken holds the user's balance for a token, updated on every trade.
 /// API response structure:
 /// {
-///   userId: Int,
-///   tokenId: Int,
-///   solAmount: Float, // Amount of SOL spent/received
-///   tokenAmount: Float, // Amount of token held
-///   side: TradeSide, // Last trade side (BUY/SELL)
-///   txHash: String // Last transaction hash
+/// userId: Int,
+/// tokenId: Int,
+/// solAmount: Float, // Amount of SOL spent/received
+/// tokenAmount: Float, // Amount of token held
+/// side: TradeSide, // Last trade side (BUY/SELL)
+/// txHash: String // Last transaction hash
 /// }
 model UserToken {
-  id        Int    @id @default(autoincrement())
-  userId    Int
-  tokenId   Int
-  tokenName String // Name of the token (denormalized for quick access)
-  tokenSymbol String // Symbol of the token (denormalized for quick access)
-  solAmount Float? // Amount of SOL spent/received
-  tokenAmount Float? // Amount of token held by the user
-  user      User   @relation(fields: [userId], references: [id])
-  token     Token  @relation(fields: [tokenId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  tokenId     Int
+  tokenName   String
+  tokenSymbol String
+  solAmount   Float?
+  tokenAmount Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  token       Token    @relation(fields: [tokenId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, tokenId])
 }
 
 model LiveStreamChatMessage {
-  id        Int      @id @default(autoincrement())
-  tokenId   Int
-  token     Token    @relation(fields: [tokenId], references: [id])
-  senderId  Int
-  sender    User     @relation("UserLiveStreamChatMessages", fields: [senderId], references: [id])
-  senderName String  // Name of the sender
-  content   String
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  tokenId    Int
+  senderId   Int
+  senderName String
+  content    String
+  createdAt  DateTime @default(now())
+  sender     User     @relation("UserLiveStreamChatMessages", fields: [senderId], references: [id])
+  token      Token    @relation(fields: [tokenId], references: [id])
 }
 
 model Follow {
-  followerId Int
+  followerId  Int
   followingId Int
   createdAt   DateTime @default(now())
-
-  follower   User @relation("UserFollowing", fields: [followerId], references: [id])
-  following  User @relation("UserFollowers", fields: [followingId], references: [id])
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id])
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
 }
 
 model Referral {
-  id             String   @id @default(uuid())
+  id              String         @id @default(uuid())
   referrerAccount String
   referredAccount String?
   referredEmail   String?
-  status         ReferralStatus @default(PENDING)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  referrer       User     @relation("Referrer", fields: [referrerAccount], references: [userAccount])
-  referred       User?    @relation("Referred", fields: [referredAccount], references: [userAccount])
-  rewards        Reward[]
+  status          ReferralStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  referred        User?          @relation("Referred", fields: [referredAccount], references: [userAccount])
+  referrer        User           @relation("Referrer", fields: [referrerAccount], references: [userAccount])
+  rewards         Reward[]
 }
 
 model Reward {
-  id          String   @id @default(uuid())
-  referralId  String
-  amount      Float
-  currency    String
-  status      RewardStatus @default(PENDING)
-  createdAt   DateTime @default(now())
+  id         String       @id @default(uuid())
+  referralId String
+  amount     Float
+  currency   String
+  status     RewardStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  referral   Referral     @relation(fields: [referralId], references: [id])
+}
 
-  referral    Referral @relation(fields: [referralId], references: [id])
+model LiveSolPrice {
+  symbol    String   @id
+  price     Float
+  createdAt DateTime @default(now())
+}
+
+enum TokenStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DELISTED
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum CurveType {
+  LINEAR
+  EXPONENTIAL
+  LOGARITHMIC
+  CUSTOM
+}
+
+enum SocialType {
+  TWITTER
+  DISCORD
+  TELEGRAM
+  WEBSITE
+  OTHER
 }
 
 enum ReferralStatus {
@@ -411,10 +411,4 @@ enum RewardStatus {
   PENDING
   CREDITED
   WITHDRAWN
-}
-
-model LiveSolPrice {
-  symbol      String  @id
-  price       Float
-  createdAt   DateTime @default(now())
 }

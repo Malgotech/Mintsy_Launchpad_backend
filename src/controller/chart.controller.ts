@@ -59,7 +59,7 @@ export class ChartController {
         const baselineCandle = await createBaselineCandle(
           token,
           startTime,
-          interval as string
+          interval as string,
         );
 
         return res.json({
@@ -76,7 +76,7 @@ export class ChartController {
       const chartData = await generateOHLCVCandles(
         trades,
         interval as string,
-        startTime
+        startTime,
       );
 
       return res.json({

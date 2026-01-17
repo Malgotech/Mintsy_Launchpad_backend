@@ -21,12 +21,12 @@ export function getTimeAgo(date: Date): string {
 export async function createBaselineCandle(
   token: any,
   startTime: Date,
-  interval: string
+  interval: string,
 ) {
   // Validate inputs
   if (!token || !startTime) {
     throw new Error(
-      "Invalid token or startTime provided to createBaselineCandle"
+      "Invalid token or startTime provided to createBaselineCandle",
     );
   }
   const livePriceDB = await prisma.liveSolPrice.findUnique({
@@ -94,12 +94,12 @@ export function calculateMarketCapFromTrade(trade: any): number {
 export async function generateOHLCVCandles(
   trades: any[],
   interval: string,
-  startTime: Date
+  startTime: Date,
 ) {
   // Validate inputs
   if (!Array.isArray(trades)) {
     console.warn(
-      "generateOHLCVCandles: trades is not an array, returning empty array"
+      "generateOHLCVCandles: trades is not an array, returning empty array",
     );
     return [];
   }
@@ -113,8 +113,9 @@ export async function generateOHLCVCandles(
 
   const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
   if (!trades || trades.length === 0) return [];
-
+  console.log("interval", interval);
   let intervalMs = getIntervalInMs(interval);
+  console.log("intervalMs", intervalMs);
   if (intervalMs <= 0) {
     console.warn("generateOHLCVCandles: invalid interval, using default 1h");
     intervalMs = 60 * 60 * 1000; // default to 1h
@@ -122,7 +123,7 @@ export async function generateOHLCVCandles(
 
   // Sort trades by createdAt ascending
   trades.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
   const grouped: Record<number, any[]> = {};
@@ -148,7 +149,7 @@ export async function generateOHLCVCandles(
         "Trade timestamp is in the future (fake timestamp), skipping:",
         trade.id,
         "timestamp:",
-        new Date(tradeTime)
+        new Date(tradeTime),
       );
       return;
     }
@@ -230,17 +231,36 @@ export async function generateOHLCVCandles(
   return candles;
 }
 
-export function getIntervalInMs(interval: string): number {
-  const value = parseInt(interval);
-  const unit = interval.slice(-1).toLowerCase();
+function getIntervalInMs(interval: string): number {
+  switch (interval) {
+    case "60s":
+    case "1m":
+      return 60 * 1000;
 
-  switch (unit) {
-    case "h":
-      return value * 60 * 60 * 1000;
-    case "m":
-      return value * 60 * 1000;
+    case "5m":
+      return 5 * 60 * 1000;
+
+    case "15m":
+      return 15 * 60 * 1000;
+
+    case "1h":
+      return 60 * 60 * 1000;
+
+    case "4h":
+      return 4 * 60 * 60 * 1000;
+
+    case "1D":
+      return 24 * 60 * 60 * 1000;
+
+    case "1W":
+      return 7 * 24 * 60 * 60 * 1000;
+
+    case "1M":
+      return 30 * 24 * 60 * 60 * 1000; // approx month
+
     default:
-      return 60 * 60 * 1000; // default to 1h
+      console.warn("Unknown interval:", interval);
+      return 0;
   }
 }
 
@@ -280,48 +300,10 @@ export function getTimeframeStartTime(timeframe: string): Date {
   }
 }
 
-/**
- * Fetch the current SOL to USD price from CoinGecko
- * Returns a number (price in USD) or null if failed
- */
-// export async function getSolPriceUSD() {
-//   const API_KEY = "9b4cc00e-85f2-412f-8669-5b6b4ef12f0e"; // store your key securely
-
-//   const url =
-//     "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
-//   try {
-//     const { data } = await axios.get(url, {
-//       params: {
-//         symbol: "SOL",
-//         convert: "USD",
-//       },
-//       headers: {
-//         "X-CMC_PRO_API_KEY": API_KEY,
-//         Accept: "application/json",
-//       },
-//       timeout: 5000, // optional: set a timeout
-//     });
-//     const price = data.data.SOL.quote.USD.price;
-//     if (!price) {
-//       return 0;
-//     }
-//     console.log("SOL price via CMC:", price);
-//     return parseFloat(price);
-//   } catch (error: any) {
-//     console.error(
-//       "Error fetching SOL price from CMC:",
-//       error.message,
-//       error.response?.data
-//     );
-//     // fallback to another API (e.g. CoinGecko) if needed
-//     return 0;
-//   }
-// }
-
 export async function getSolPriceUSD() {
   try {
     const { data } = await axios.get(
-      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT"
+      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT",
     );
     console.log("Pyth Sol Usd Price", parseFloat(data.price));
     return parseFloat(data.price);
