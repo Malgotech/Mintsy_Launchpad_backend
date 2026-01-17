@@ -11,6 +11,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const server = http_1.default.createServer(index_1.default);
 (0, socket_1.initSocket)(server);
-server.listen(process.env.PORT || 4001, () => {
-    console.log(`✅ Server running on http://localhost:4001`);
+server.listen(process.env.PORT || 3000, () => {
+    console.log(`✅ Server running on http://localhost:3000`);
 });

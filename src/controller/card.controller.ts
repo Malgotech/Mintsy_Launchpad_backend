@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { getTimeAgo, getSolPriceUSD } from "../utils/helpers";
+import { getSolPriceUSD, getTimeAgo } from "../utils/helpers";
 import { create } from "domain";
 const prisma = new PrismaClient();
 
@@ -21,6 +21,10 @@ export class CardController {
 
       let whereClause: any = {
         status: "ACTIVE",
+        // progress: {
+        //   gt: 30,
+        // },
+        graduationStatus: "PENDING",
       };
       let orderBy: any = {};
 
@@ -74,7 +78,11 @@ export class CardController {
       }
 
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
 
       // For each token, calculate 24h volume in USD
       const now = new Date();
@@ -196,9 +204,7 @@ export class CardController {
             }
           : null,
         metrics: {
-          marketCap: `$${(
-            token?.finalMarketCap * solPrice || 0
-          ).toLocaleString()}`,
+          marketCap: `$${(token?.finalMarketCap || 0).toLocaleString()}`,
           price: token.lastPrice,
           volume: `$${(volumeMap[token.id] || 0).toLocaleString()}`,
           liquidity: `0%`, // Temporarily set to 0% due to missing liquidityPool relation
@@ -242,6 +248,7 @@ export class CardController {
       const tokens = await prisma.token.findMany({
         where: {
           status: "ACTIVE",
+          graduationStatus: "SUCCESS",
         },
 
         orderBy: {
@@ -257,7 +264,11 @@ export class CardController {
       });
 
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -331,7 +342,7 @@ export class CardController {
         description: token.description,
         readMoreLink: `/coins/${token.symbol.toLowerCase()}`,
         progress: token.progress,
-        marketCap: token.finalMarketCap * solPrice,
+        marketCap: token.finalMarketCap || 0,
 
         replies:
           token.socials?.reduce(
@@ -445,7 +456,12 @@ export class CardController {
       });
 
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
+
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -521,7 +537,7 @@ export class CardController {
           name: token.creator.name,
           verified: token.creator.isVerified,
         },
-        marketCap: token.finalMarketCap * solPrice,
+        marketCap: token.finalMarketCap || 0,
         //@ts-ignore
         replies:
           token.socials?.reduce(
@@ -589,17 +605,18 @@ export class CardController {
 
       let whereClause: any = {};
 
-      // console.log("Tags:", tags);
       if (tags) {
         whereClause.tags = {
           some: {
             id: {
               in: (tags as string).split(","),
             },
+            active: true,
           },
-          status: "ACTIVE",
         };
       }
+
+      // whereClause.status = "ACTIVE";
 
       if (nsfw === "false") {
         whereClause.nsfw = false;
@@ -655,7 +672,11 @@ export class CardController {
       // const tagsw = tokens.flatMap(token => token.tags.map((tag: any) => tag.id));
       // console.log("Tags in tokens:", tokens[0]?.tags);
 
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -834,7 +855,7 @@ export class CardController {
           name: token.creator.name,
           verified: token.creator.isVerified,
         },
-        marketCap: token.finalMarketCap * solPrice,
+        marketCap: token.finalMarketCap || 0,
         //@ts-ignore
         replies:
           token.socials?.reduce(

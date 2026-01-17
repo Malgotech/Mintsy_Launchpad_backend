@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export class UserController {
   async createUser(req: Request, res: Response) {
-    const { walletAddress, name, avatarUrl, bio } = req.body;
+    const { walletAddress, name, avatarUrl, bio, referralCode } = req.body;
     if (!walletAddress) {
       return res.status(400).json({ error: "walletAddress is required" });
     }
@@ -17,14 +17,20 @@ export class UserController {
         return res.json({ newUser: false, user: existingUser });
       }
       const user = await prisma.user.create({
-        data: { userAccount: walletAddress, name, avatarUrl, bio },
+        data: {
+          userAccount: walletAddress,
+          name,
+          avatarUrl,
+          bio,
+          referralCode,
+        },
       });
       // Create default watchlist for the user
       const watchlist = await prisma.watchlist.create({
         data: {
           userId: user.id,
-          name: "My Watchlist"
-        }
+          name: "My Watchlist",
+        },
       });
       res.json({ newUser: true, user, watchlist });
     } catch (error: any) {
@@ -46,7 +52,7 @@ export class UserController {
         where: { id: parseInt(id) },
         include: {
           _count: {
-            select: { followers: true, following: true }
+            select: { followers: true, following: true },
           },
           tokens: true,
         },
@@ -55,10 +61,9 @@ export class UserController {
       if (!user) return res.status(404).json({ error: "User not found" });
 
       res.json({
-
-          ...user,
-          followers: undefined,
-          following: undefined,
+        ...user,
+        followers: undefined,
+        following: undefined,
 
         // followersCount: user._count.followers,
         // followingCount: user._count.following,
@@ -120,7 +125,7 @@ export class UserController {
         where: { userAccount },
         include: {
           _count: {
-            select: { followers: true, following: true }
+            select: { followers: true, following: true },
           },
           tokens: true,
         },
@@ -129,10 +134,9 @@ export class UserController {
         return res.status(404).json({ error: "User not found" });
       }
       res.json({
-
-          ...user,
-          followers: undefined,
-          following: undefined,
+        ...user,
+        followers: undefined,
+        following: undefined,
 
         // followersCount: user._count.followers,
         // followingCount: user._count.following,
@@ -162,9 +166,9 @@ export class UserController {
               name: true,
               symbol: true,
               cid: true,
-              mintAccount:true
-            }
-          }
+              mintAccount: true,
+            },
+          },
         },
       });
       res.json(userTokens);
@@ -180,15 +184,17 @@ export class UserController {
     const followerId = parseInt(req.body.followerId);
     const followingId = parseInt(req.params.id);
     if (!followerId || !followingId || followerId === followingId) {
-      return res.status(400).json({ error: "Invalid follower or following id" });
+      return res
+        .status(400)
+        .json({ error: "Invalid follower or following id" });
     }
     try {
       await prisma.follow.create({
-        data: { followerId, followingId }
+        data: { followerId, followingId },
       });
       res.json({ message: "Followed successfully" });
     } catch (error: any) {
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         return res.status(400).json({ error: "Already following" });
       }
       res.status(500).json({ error: error.message });
@@ -199,11 +205,13 @@ export class UserController {
     const followerId = parseInt(req.body.followerId);
     const followingId = parseInt(req.params.id);
     if (!followerId || !followingId || followerId === followingId) {
-      return res.status(400).json({ error: "Invalid follower or following id" });
+      return res
+        .status(400)
+        .json({ error: "Invalid follower or following id" });
     }
     try {
       await prisma.follow.delete({
-        where: { followerId_followingId: { followerId, followingId } }
+        where: { followerId_followingId: { followerId, followingId } },
       });
       res.json({ message: "Unfollowed successfully" });
     } catch (error: any) {
@@ -239,7 +247,7 @@ export class UserController {
     const userId = parseInt(req.params.id);
     try {
       const topFollowed = await prisma.follow.groupBy({
-        by: ['followingId'],
+        by: ["followingId"],
         _count: {
           followerId: true,
         },
@@ -248,12 +256,12 @@ export class UserController {
         },
         orderBy: {
           _count: {
-            followerId: 'desc',
+            followerId: "desc",
           },
         },
         take: 5,
       });
-  
+
       // If no users have followers, get 5 random users instead
       if (topFollowed.length === 0) {
         const randomUsers = await prisma.user.findMany({
@@ -264,7 +272,7 @@ export class UserController {
         });
 
         // Get the current user's following relationships for these random users
-        const userIds = randomUsers.map(u => u.id);
+        const userIds = randomUsers.map((u) => u.id);
         const currentUserFollowing = await prisma.follow.findMany({
           where: {
             followerId: userId,
@@ -275,9 +283,9 @@ export class UserController {
           },
         });
 
-        const followingIds = currentUserFollowing.map(f => f.followingId);
+        const followingIds = currentUserFollowing.map((f) => f.followingId);
 
-        const result = randomUsers.map(user => ({
+        const result = randomUsers.map((user) => ({
           ...user,
           followerCount: 0,
           isFollowing: followingIds.includes(user.id),
@@ -286,8 +294,8 @@ export class UserController {
         return res.status(200).json(result);
       }
 
-      const userIds = topFollowed.map(f => f.followingId);
-  
+      const userIds = topFollowed.map((f) => f.followingId);
+
       const users = await prisma.user.findMany({
         where: {
           id: { in: userIds },
@@ -305,22 +313,23 @@ export class UserController {
         },
       });
 
-      const followingIds = currentUserFollowing.map(f => f.followingId);
-  
-      const result = users.map(user => {
-        const count = topFollowed.find(f => f.followingId === user.id)?._count.followerId || 0;
+      const followingIds = currentUserFollowing.map((f) => f.followingId);
+
+      const result = users.map((user) => {
+        const count =
+          topFollowed.find((f) => f.followingId === user.id)?._count
+            .followerId || 0;
         return {
           ...user,
           followerCount: count,
           isFollowing: followingIds.includes(user.id),
         };
       });
-  
+
       res.status(200).json(result);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Failed to fetch top followed users' });
+      res.status(500).json({ error: "Failed to fetch top followed users" });
     }
   }
-  
 }

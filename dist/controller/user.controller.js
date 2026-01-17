@@ -5,7 +5,7 @@ const client_1 = require("@prisma/client"); // adjust relative path accordingly
 const prisma = new client_1.PrismaClient();
 class UserController {
     async createUser(req, res) {
-        const { walletAddress, name, avatarUrl, bio } = req.body;
+        const { walletAddress, name, avatarUrl, bio, referralCode } = req.body;
         if (!walletAddress) {
             return res.status(400).json({ error: "walletAddress is required" });
         }
@@ -17,14 +17,20 @@ class UserController {
                 return res.json({ newUser: false, user: existingUser });
             }
             const user = await prisma.user.create({
-                data: { userAccount: walletAddress, name, avatarUrl, bio },
+                data: {
+                    userAccount: walletAddress,
+                    name,
+                    avatarUrl,
+                    bio,
+                    referralCode,
+                },
             });
             // Create default watchlist for the user
             const watchlist = await prisma.watchlist.create({
                 data: {
                     userId: user.id,
-                    name: "My Watchlist"
-                }
+                    name: "My Watchlist",
+                },
             });
             res.json({ newUser: true, user, watchlist });
         }
@@ -44,7 +50,7 @@ class UserController {
                 where: { id: parseInt(id) },
                 include: {
                     _count: {
-                        select: { followers: true, following: true }
+                        select: { followers: true, following: true },
                     },
                     tokens: true,
                 },
@@ -112,7 +118,7 @@ class UserController {
                 where: { userAccount },
                 include: {
                     _count: {
-                        select: { followers: true, following: true }
+                        select: { followers: true, following: true },
                     },
                     tokens: true,
                 },
@@ -151,9 +157,9 @@ class UserController {
                             name: true,
                             symbol: true,
                             cid: true,
-                            mintAccount: true
-                        }
-                    }
+                            mintAccount: true,
+                        },
+                    },
                 },
             });
             res.json(userTokens);
@@ -168,16 +174,18 @@ class UserController {
         const followerId = parseInt(req.body.followerId);
         const followingId = parseInt(req.params.id);
         if (!followerId || !followingId || followerId === followingId) {
-            return res.status(400).json({ error: "Invalid follower or following id" });
+            return res
+                .status(400)
+                .json({ error: "Invalid follower or following id" });
         }
         try {
             await prisma.follow.create({
-                data: { followerId, followingId }
+                data: { followerId, followingId },
             });
             res.json({ message: "Followed successfully" });
         }
         catch (error) {
-            if (error.code === 'P2002') {
+            if (error.code === "P2002") {
                 return res.status(400).json({ error: "Already following" });
             }
             res.status(500).json({ error: error.message });
@@ -187,11 +195,13 @@ class UserController {
         const followerId = parseInt(req.body.followerId);
         const followingId = parseInt(req.params.id);
         if (!followerId || !followingId || followerId === followingId) {
-            return res.status(400).json({ error: "Invalid follower or following id" });
+            return res
+                .status(400)
+                .json({ error: "Invalid follower or following id" });
         }
         try {
             await prisma.follow.delete({
-                where: { followerId_followingId: { followerId, followingId } }
+                where: { followerId_followingId: { followerId, followingId } },
             });
             res.json({ message: "Unfollowed successfully" });
         }
@@ -226,7 +236,7 @@ class UserController {
         const userId = parseInt(req.params.id);
         try {
             const topFollowed = await prisma.follow.groupBy({
-                by: ['followingId'],
+                by: ["followingId"],
                 _count: {
                     followerId: true,
                 },
@@ -235,7 +245,7 @@ class UserController {
                 },
                 orderBy: {
                     _count: {
-                        followerId: 'desc',
+                        followerId: "desc",
                     },
                 },
                 take: 5,
@@ -249,7 +259,7 @@ class UserController {
                     take: 5,
                 });
                 // Get the current user's following relationships for these random users
-                const userIds = randomUsers.map(u => u.id);
+                const userIds = randomUsers.map((u) => u.id);
                 const currentUserFollowing = await prisma.follow.findMany({
                     where: {
                         followerId: userId,
@@ -259,15 +269,15 @@ class UserController {
                         followingId: true,
                     },
                 });
-                const followingIds = currentUserFollowing.map(f => f.followingId);
-                const result = randomUsers.map(user => ({
+                const followingIds = currentUserFollowing.map((f) => f.followingId);
+                const result = randomUsers.map((user) => ({
                     ...user,
                     followerCount: 0,
                     isFollowing: followingIds.includes(user.id),
                 }));
                 return res.status(200).json(result);
             }
-            const userIds = topFollowed.map(f => f.followingId);
+            const userIds = topFollowed.map((f) => f.followingId);
             const users = await prisma.user.findMany({
                 where: {
                     id: { in: userIds },
@@ -283,9 +293,10 @@ class UserController {
                     followingId: true,
                 },
             });
-            const followingIds = currentUserFollowing.map(f => f.followingId);
-            const result = users.map(user => {
-                const count = topFollowed.find(f => f.followingId === user.id)?._count.followerId || 0;
+            const followingIds = currentUserFollowing.map((f) => f.followingId);
+            const result = users.map((user) => {
+                const count = topFollowed.find((f) => f.followingId === user.id)?._count
+                    .followerId || 0;
                 return {
                     ...user,
                     followerCount: count,
@@ -296,7 +307,7 @@ class UserController {
         }
         catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Failed to fetch top followed users' });
+            res.status(500).json({ error: "Failed to fetch top followed users" });
         }
     }
 }

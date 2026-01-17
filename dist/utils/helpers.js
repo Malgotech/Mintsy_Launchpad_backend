@@ -1,13 +1,9 @@
 "use strict";
-
-const axios = require("axios");
-
 var __importDefault =
   (this && this.__importDefault) ||
   function (mod) {
     return mod && mod.__esModule ? mod : { default: mod };
   };
-
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTimeAgo = getTimeAgo;
 exports.createBaselineCandle = createBaselineCandle;
@@ -17,10 +13,9 @@ exports.getIntervalInMs = getIntervalInMs;
 exports.getTimeframeStartTime = getTimeframeStartTime;
 exports.getSolPriceUSD = getSolPriceUSD;
 const axios_1 = __importDefault(require("axios"));
-
+const prismaService_1 = require("../service/prismaService");
 // Default starting value for chart candles (4.4k as per requirement)
 // const DEFAULT_CHART_START_VALUE = 4200;
-
 // Helper function for time ago format
 function getTimeAgo(date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -40,16 +35,18 @@ async function createBaselineCandle(token, startTime, interval) {
       "Invalid token or startTime provided to createBaselineCandle"
     );
   }
-  const solUsdPrice = await getSolPriceUSD();
-
-  const DEFAULT_CHART_START_VALUE = Number(30) * Number(solUsdPrice);
-
+  const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
+    where: { symbol: "SOL" },
+  });
+  const livePrice = await getSolPriceUSD();
+  const solUsdPrice = livePriceDB?.price || livePrice;
+  console.log("solUsdPrice.... :>> ", solUsdPrice);
+  const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
   const currentMarketCap = token.market?.marketCap || 0;
   // Use timeframe start time for proper alignment, not current time
   const timestamp = Math.floor(startTime.getTime() / 1000);
   // Use the default starting value constant
   const defaultStartValue = DEFAULT_CHART_START_VALUE;
-
   // Determine if this should be marked as 1min or 5min based on interval
   const is_1_min = interval === "1m";
   const is_5_min =
@@ -91,10 +88,6 @@ function calculateMarketCapFromTrade(trade) {
 }
 // Helper function to generate OHLCV candles (Pump.fun style)
 async function generateOHLCVCandles(trades, interval, startTime) {
-  const solUsdPrice = await getSolPriceUSD();
-
-  const DEFAULT_CHART_START_VALUE = Number(30) * Number(solUsdPrice);
-
   // Validate inputs
   if (!Array.isArray(trades)) {
     console.warn(
@@ -102,6 +95,13 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     );
     return [];
   }
+  const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
+    where: { symbol: "SOL" },
+  });
+  const livePrice = await getSolPriceUSD();
+  const solUsdPrice = livePriceDB?.price || livePrice;
+  console.log("solUsdPrice.... :>> ", solUsdPrice);
+  const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
   if (!trades || trades.length === 0) return [];
   let intervalMs = getIntervalInMs(interval);
   if (intervalMs <= 0) {
@@ -142,13 +142,11 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     grouped[intervalStart].push(trade);
   });
   const candles = [];
-
   Object.entries(grouped).forEach(([intervalStart, group], index) => {
     // Calculate market caps using the helper function
     const marketCaps = group
       .map((t) => calculateMarketCapFromTrade(t))
       .filter((mc) => mc > 0); // Only include valid market cap data
-
     if (marketCaps.length === 0) return; // skip if no valid market cap data
     const volumes = group
       .filter((t) => t.tokenAmount !== undefined || t.amount !== undefined)
@@ -156,7 +154,6 @@ async function generateOHLCVCandles(trades, interval, startTime) {
         const amount = Number(t.tokenAmount ?? t.amount ?? 0);
         return isNaN(amount) ? 0 : amount;
       });
-
     let open, close, high, low;
     // Special handling for the first candle - start from 4.4k
     if (index === 0) {
@@ -201,7 +198,7 @@ async function generateOHLCVCandles(trades, interval, startTime) {
   });
   // Sort candles by timestamp ascending
   candles.sort((a, b) => a.timestamp - b.timestamp);
-
+  console.log("candles", candles);
   return candles;
 }
 function getIntervalInMs(interval) {
@@ -253,45 +250,43 @@ function getTimeframeStartTime(timeframe) {
  * Fetch the current SOL to USD price from CoinGecko
  * Returns a number (price in USD) or null if failed
  */
-// async function getSolPriceUSD() {
-//   const API_KEY = "44f7cde8-31ff-459b-9e81-d6f4517d002f"; // store your key securely
-
-//   const url =
-//     "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
-//   try {
-//     const { data } = await axios.get(url, {
-//       params: {
-//         symbol: "SOL",
-//         convert: "USD",
-//       },
-//       headers: {
-//         "X-CMC_PRO_API_KEY": API_KEY,
-//         Accept: "application/json",
-//       },
-//       timeout: 5000, // optional: set a timeout
-//     });
-//     const price = data.data.SOL.quote.USD.price;
-//     console.log("SOL price via CMC:", price);
-//     return price;
-//   } catch (error) {
-//     console.error(
-//       "Error fetching SOL price from CMC:",
-//       error.message,
-//       error.response?.data
-//     );
-//     // fallback to another API (e.g. CoinGecko) if needed
-//     return 0;
-//   }
-// }
-async function getSolPriceUSD() {
+export async function getSolPriceUSD() {
+  const API_KEY = "9b4cc00e-85f2-412f-8669-5b6b4ef12f0e"; // store your key securely
+  const url =
+    "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
   try {
-    const { data } = await axios.get(
-      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT"
+    const { data } = await axios.get(url, {
+      params: {
+        symbol: "SOL",
+        convert: "USD",
+      },
+      headers: {
+        "X-CMC_PRO_API_KEY": API_KEY,
+        Accept: "application/json",
+      },
+      timeout: 5000, // optional: set a timeout
+    });
+    const price = data.data.SOL.quote.USD.price;
+    console.log("SOL price via CMC:", price);
+    return price;
+  } catch (error) {
+    console.error(
+      "Error fetching SOL price from CMC:",
+      error.message,
+      error.response?.data
     );
-    console.log("Pyth Sol Usd Price", parseFloat(data.price));
-    return parseFloat(data.price);
-  } catch (err) {
-    console.error("Binance failed:", err.message);
+    // fallback to another API (e.g. CoinGecko) if needed
     return 0;
   }
 }
+// async function getSolPriceUSD() {
+//     try {
+//         const { data } = await axios_1.default.get("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT");
+//         console.log("Pyth Sol Usd Price", parseFloat(data.price));
+//         return parseFloat(data.price);
+//     }
+//     catch (err) {
+//         console.error("Binance failed:", err.message);
+//         return 0;
+//     }
+// }

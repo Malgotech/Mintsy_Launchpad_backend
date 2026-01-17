@@ -11,14 +11,16 @@ import watchlistRouter from "./routes/watchlist.routes";
 import chartRouter from "./routes/chart.routes";
 import searchRouter from "./routes/search.routes";
 import tradeRouter from "./routes/trade.routes";
-import threadsRouter from './routes/thread.routes';
-import advanceRoutes from './routes/advance.routes';
+import threadsRouter from "./routes/thread.routes";
+import advanceRoutes from "./routes/advance.routes";
 import watchlistRoutes from "./routes/watchlist.routes";
 import adminRouter from "./routes/admin.routes";
 import livekitRouter from "./routes/livekit.routes";
-import tagRoutes from './routes/tag.routes';
+import tagRoutes from "./routes/tag.routes";
 import referralRoutes from "./routes/referral.routes";
 import rewardRoutes from "./routes/reward.routes";
+import { startLivePriceCron } from "./service/livePriceCron";
+
 // import webhookRouter from "./routes/webhook.routes";
 dotenv.config();
 
@@ -40,13 +42,14 @@ app.use("/api/v1/watchlist", watchlistRouter);
 app.use("/api/v1/charts", chartRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/trade", tradeRouter);
-app.use("/api/v1/threads", threadsRouter)
-app.use("/api/v1/advance", advanceRoutes)
-app.use('/watchlist', watchlistRoutes);
-app.use('/api/v1/admin', adminRouter);
+app.use("/api/v1/threads", threadsRouter);
+app.use("/api/v1/advance", advanceRoutes);
+app.use("/watchlist", watchlistRoutes);
+app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/livekit", livekitRouter);
 app.use("/api/v1/tags", tagRoutes);
-app.use('/api/v1/referrals', referralRoutes);
-app.use('/api/v1/rewards', rewardRoutes);
+app.use("/api/v1/referrals", referralRoutes);
+app.use("/api/v1/rewards", rewardRoutes);
+startLivePriceCron();
 // app.use("/api/v1/webhooks", webhookRouter);
 export default app;

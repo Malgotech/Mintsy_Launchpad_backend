@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { getIO } from "../utils/socket";
 import prismaService from "../service/prismaService";
-import { getSolPriceUSD } from "../utils/helpers";
 import { emitChartUpdateOnPriceChange } from "../utils/socket";
 import axios from "axios";
+import { getSolPriceUSD } from "../utils/helpers";
 
 const prisma = new PrismaClient();
 
@@ -211,7 +211,11 @@ export class TokenController {
         },
       });
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -326,7 +330,11 @@ export class TokenController {
       }
 
       // Fetch SOL price in USD
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const trades = await prisma.trade.findMany({
@@ -491,7 +499,11 @@ export class TokenController {
         },
       });
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -714,14 +726,17 @@ export class TokenController {
 
       const searchWordSet = new Set(searchWords);
 
-      if (searchWordSet.size === 0) {
+      if (searchWordSet.size < 2) {
         return res.status(400).json({
           success: false,
           error: "Description must contain at least two meaningful words",
         });
       }
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
 
-      // Get all tokens with non-null description and ACTIVE status
+      // Fetch tokens + creator user
       const tokens = await prisma.token.findMany({
         where: {
           status: "ACTIVE",
@@ -735,32 +750,32 @@ export class TokenController {
         },
       });
 
-      // Score tokens by number of matching words
+      // Score tokens
       const scoredTokens = tokens.map((token) => {
         const tokenWords = new Set(
-          (token.description || "")
-            .toLowerCase()
+          token
+            .description!.toLowerCase()
             .split(/\s+/)
             .filter((word) => word.length > 3)
         );
 
-        const matchCount = [...searchWordSet].filter((word) =>
+        const matchScore = [...searchWordSet].filter((word) =>
           tokenWords.has(word)
         ).length;
 
         return {
           ...token,
-          matchScore: matchCount,
+          matchScore,
+          finalMarketCapUSD: token.finalMarketCap,
         };
       });
 
-      // Only return tokens with at least 2 matching words
+      // Filter + sort + limit
       const similarCoins = scoredTokens
         .filter((token) => token.matchScore >= 2)
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, Number(limit));
 
-      // If no tokens matched strictly, return empty array
       return res.json({
         success: true,
         data: {
@@ -799,7 +814,11 @@ export class TokenController {
       }
 
       // Fetch SOL price in USD
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const trades = await prisma.trade.findMany({
@@ -855,7 +874,7 @@ export class TokenController {
         isLive: token.isLive,
         altText: `${token.name} logo`,
         createdAt: token.createdAt,
-        finalMarketCap: Number(token.finalMarketCap) * Number(solPrice),
+        finalMarketCap: Number(token.finalMarketCap),
         progress: token.progress,
         creator: {
           id: token.creator.id,
@@ -1033,7 +1052,11 @@ export class TokenController {
         },
       });
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -1060,6 +1083,7 @@ export class TokenController {
       // Attach volume to each token
       const tokensWithVolume = liveTokens.map((token: any) => ({
         ...token,
+        marketCap: token.finalMarketCap,
         volume: `$${(volumeMap[token.id] || 0).toLocaleString()}`,
       }));
       return res.json({
@@ -1099,7 +1123,11 @@ export class TokenController {
         },
       });
       // Fetch SOL price in USD once
-      const solPrice = await getSolPriceUSD();
+      const livePriceDB = await prisma.liveSolPrice.findUnique({
+        where: { symbol: "SOL" },
+      });
+      const livePrice = await getSolPriceUSD();
+      const solPrice = livePriceDB?.price || livePrice;
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -1173,7 +1201,7 @@ export class TokenController {
 
       try {
         const response = await axios.post(
-          "http://localhost:4000/addGraduatedToken",
+          "https://api.mintsyplus.fun/addGraduatedToken",
           {
             id: updated.mintAccount,
             name: updated.name,
@@ -1197,17 +1225,13 @@ export class TokenController {
           },
         });
 
-        console.log("Trades to send:", trades);
-
         if (trades.length > 0) {
           try {
             const response = await axios.post(
-              "http://localhost:4000/addTrade",
+              "https://api.mintsyplus.fun/addTrade",
               trades, // send the array directly
               { headers: { "Content-Type": "application/json" } }
             );
-
-            console.log("Add trade response data:", response.data.data);
           } catch (axiosError: any) {
             console.error(
               "Error calling addGraduatedTrade API:",

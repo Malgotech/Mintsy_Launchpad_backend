@@ -110,6 +110,7 @@ export class AdminController {
           name: true,
           symbol: true,
           graduationStatus: true,
+          rewardStatus: true,
           featured: true,
           blacklisted: true,
           flagged: true,
@@ -147,9 +148,11 @@ export class AdminController {
         creator: token.creator,
         market: {
           currentPrice: null,
-          marketCap: token.finalMarketCap, // ✅ mapped
+          marketCap: Number(token.finalMarketCap), // ✅ mapped
           volume24h: 0,
         },
+        graduationStatus: token.graduationStatus,
+        rewardStatus: token.rewardStatus,
       }));
 
       return res.json({
@@ -792,6 +795,34 @@ export class AdminController {
       });
     } catch (error) {
       console.error("Error withdrawing:", error);
+      return res.status(500).json({
+        success: false,
+        error: "Internal Server Error",
+      });
+    }
+  };
+  updateRewardStatus = async (req: Request, res: Response) => {
+    try {
+      const { tokenId } = req.body;
+      // Validate required fields
+      if (!tokenId) {
+        return res.status(400).json({
+          success: false,
+          error: "Token ID is required",
+        });
+      }
+      const rewardStatus = "SUCCESS";
+      const rewardtoken = await prisma.token.update({
+        where: { id: Number(tokenId) },
+        data: { rewardStatus },
+      });
+      return res.json({
+        success: true,
+        message: "Reward status updated successfully",
+        data: rewardtoken,
+      });
+    } catch (error) {
+      console.error("Error updating reward status:", error);
       return res.status(500).json({
         success: false,
         error: "Internal Server Error",

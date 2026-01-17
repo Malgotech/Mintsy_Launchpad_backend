@@ -2,204 +2,192 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdvanceService = void 0;
 const client_1 = require("@prisma/client");
+const prismaService_1 = require("./prismaService");
 const helpers_1 = require("../utils/helpers");
 class AdvanceService {
-  constructor() {
-    this.prisma = new client_1.PrismaClient();
-  }
-  async createColumn(data) {
-    return this.prisma.advanceColumn.create({
-      data,
-    });
-  }
-  async getColumns(userId) {
-    // Get hidden token IDs for the user
-    let hiddenTokenIds = [];
-    if (userId) {
-      const hidden = await this.prisma.hiddenCard.findMany({
-        where: { userId },
-        select: { tokenId: true },
-      });
-      hiddenTokenIds = hidden.map((h) => h.tokenId);
+    constructor() {
+        this.prisma = new client_1.PrismaClient();
     }
-    const notHidden =
-      hiddenTokenIds.length > 0 ? { notIn: hiddenTokenIds } : undefined;
-    // Fetch all tokens for all columns at once for stats
-    const allTokens = await this.prisma.token.findMany({
-      where: { status: "ACTIVE", ...(notHidden ? { id: notHidden } : {}) },
-    });
-    // Fetch SOL price in USD once
-    const solPrice = await (0, helpers_1.getSolPriceUSD)();
-    const now = new Date();
-    const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const volumes = await Promise.all(
-      allTokens.map(async (token) => {
-        const trades = await this.prisma.trade.findMany({
-          where: {
-            tokenId: token.id,
-            createdAt: { gte: since },
-          },
+    async createColumn(data) {
+        // Changed AdvanceColumn to any as it's not exported
+        return this.prisma.advanceColumn.create({
+            data,
         });
-        const solAmount = trades.reduce(
-          (sum, t) => sum + (Number(t.price) || 0),
-          0
-        );
-        return {
-          tokenId: token.id,
-          volume: solPrice ? solAmount * solPrice : 0,
-        };
-      })
-    );
-    const volumeMap = Object.fromEntries(
-      volumes.map((v) => [v.tokenId, v.volume])
-    );
-    // Compute userCountMap and top10Map for all tokens
-    const userCounts = await Promise.all(
-      allTokens.map(async (token) => {
-        const count = await this.prisma.userToken.count({
-          where: {
-            tokenId: token.id,
-            tokenAmount: { gt: 0 },
-          },
-        });
-        return { tokenId: token.id, count };
-      })
-    );
-    const userCountMap = Object.fromEntries(
-      userCounts.map((u) => [u.tokenId, u.count])
-    );
-    const top10Percents = await Promise.all(
-      allTokens.map(async (token) => {
-        if (!token.supply || token.supply === 0)
-          return { tokenId: token.id, percent: 0 };
-        const top10 = await this.prisma.userToken.findMany({
-          where: {
-            tokenId: token.id,
-            tokenAmount: { gt: 0 },
-          },
-          orderBy: { tokenAmount: "desc" },
-          take: 10,
-        });
-        const top10Sum = top10.reduce(
-          (sum, ut) => sum + (ut.tokenAmount || 0),
-          0
-        );
-        const percent = Number(((top10Sum / token.supply) * 100).toFixed(2));
-        return { tokenId: token.id, percent };
-      })
-    );
-    const top10Map = Object.fromEntries(
-      top10Percents.map((t) => [t.tokenId, t.percent])
-    );
-    // Now fetch tokens for each column as before
-    const [newlyCreated, graduateSoon, featured] = await Promise.all([
-      this.prisma.token.findMany({
-        where: {
-          status: "ACTIVE",
-          graduationStatus: { not: "SUCCESS" },
-          ...(notHidden ? { id: notHidden } : {}),
-        },
-        include: { market: true },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      }),
-      this.prisma.token.findMany({
-        where: {
-          status: "ACTIVE",
-          graduationStatus: { not: "SUCCESS" },
-          ...(notHidden ? { id: notHidden } : {}),
-        },
-        include: { market: true },
-        orderBy: { progress: "desc" },
-        take: 10,
-      }),
-      this.prisma.token.findMany({
-        where: { featured: true, ...(notHidden ? { id: notHidden } : {}) },
-        include: { market: true },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      }),
-    ]);
-    // console.log(newlyCreated)
-    // Attach stats to each token in each column
-    function addStats(tokens) {
-      return tokens.map((token) => ({
-        ...token,
-        stats: {
-          users: userCountMap[token.id] || 0,
-          top10: top10Map[token.id] || 0,
-        },
-        volume: `$${(volumeMap[token.id] || 0).toLocaleString()}`,
-        solCollected:
-          token.market && token.market.solCollected != null
-            ? token.market.solCollected
-            : 0,
-      }));
     }
-    const columns = [
-      {
-        title: "Newly Created",
-        type: "newly_created",
-        cards: addStats(newlyCreated),
-      },
-      {
-        title: "Graduate Soon",
-        type: "graduate_soon",
-        cards: addStats(graduateSoon),
-      },
-      {
-        title: "Featured",
-        type: "featured",
-        cards: addStats(featured),
-      },
-    ];
-    return columns;
-  }
-  async createCard(data) {
-    return this.prisma.advanceCard.create({
-      data,
-      include: {
-        token: true,
-        column: true,
-      },
-    });
-  }
-  async updateCard(id, data) {
-    return this.prisma.advanceCard.update({
-      where: { id },
-      data,
-      include: {
-        token: true,
-        column: true,
-      },
-    });
-  }
-  async deleteCard(id) {
-    return this.prisma.advanceCard.delete({
-      where: { id },
-    });
-  }
-  async getCardsByColumn(columnId) {
-    return this.prisma.advanceCard.findMany({
-      where: {
-        columnId,
-      },
-      include: {
-        token: true,
-      },
-    });
-  }
-  async moveCard(cardId, newColumnId) {
-    return this.prisma.advanceCard.update({
-      where: { id: cardId },
-      data: {
-        columnId: newColumnId,
-      },
-      include: {
-        token: true,
-        column: true,
-      },
-    });
-  }
+    async getColumns(userId) {
+        // Get hidden token IDs for the user
+        let hiddenTokenIds = [];
+        if (userId) {
+            const hidden = await this.prisma.hiddenCard.findMany({
+                where: { userId },
+                select: { tokenId: true },
+            });
+            hiddenTokenIds = hidden.map((h) => h.tokenId);
+        }
+        const notHidden = hiddenTokenIds.length > 0 ? { notIn: hiddenTokenIds } : undefined;
+        // Fetch all tokens for all columns at once for stats
+        const allTokens = await this.prisma.token.findMany({
+            where: { status: "ACTIVE", ...(notHidden ? { id: notHidden } : {}) },
+        });
+        // Fetch SOL price in USD once
+        const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
+            where: { symbol: "SOL" },
+        });
+        const livePrice = await (0, helpers_1.getSolPriceUSD)();
+        const solPrice = livePriceDB?.price || livePrice;
+        const now = new Date();
+        const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const volumes = await Promise.all(allTokens.map(async (token) => {
+            const trades = await this.prisma.trade.findMany({
+                where: {
+                    tokenId: token.id,
+                    createdAt: { gte: since },
+                },
+            });
+            const solAmount = trades.reduce((sum, t) => sum + (Number(t.price) || 0), 0);
+            return {
+                tokenId: token.id,
+                volume: solPrice ? solAmount * solPrice : 0,
+            };
+        }));
+        const volumeMap = Object.fromEntries(volumes.map((v) => [v.tokenId, v.volume]));
+        // Compute userCountMap and top10Map for all tokens
+        const userCounts = await Promise.all(allTokens.map(async (token) => {
+            const count = await this.prisma.userToken.count({
+                where: {
+                    tokenId: token.id,
+                    tokenAmount: { gt: 0 },
+                },
+            });
+            return { tokenId: token.id, count };
+        }));
+        const userCountMap = Object.fromEntries(userCounts.map((u) => [u.tokenId, u.count]));
+        const top10Percents = await Promise.all(allTokens.map(async (token) => {
+            if (!token.supply || token.supply === 0)
+                return { tokenId: token.id, percent: 0 };
+            const top10 = await this.prisma.userToken.findMany({
+                where: {
+                    tokenId: token.id,
+                    tokenAmount: { gt: 0 },
+                },
+                orderBy: { tokenAmount: "desc" },
+                take: 10,
+            });
+            const top10Sum = top10.reduce((sum, ut) => sum + (ut.tokenAmount || 0), 0);
+            const percent = Number(((top10Sum / token.supply) * 100).toFixed(2));
+            return { tokenId: token.id, percent };
+        }));
+        const top10Map = Object.fromEntries(top10Percents.map((t) => [t.tokenId, t.percent]));
+        // Now fetch tokens for each column as before
+        const [newlyCreated, graduateSoon, featured] = await Promise.all([
+            this.prisma.token.findMany({
+                where: {
+                    status: "ACTIVE",
+                    graduationStatus: { not: "SUCCESS" },
+                    progress: { lt: 40 }, // 👈 FIX HERE
+                    ...(notHidden ? { id: notHidden } : {}),
+                },
+                include: { market: true },
+                orderBy: { createdAt: "desc" },
+                take: 10,
+            }),
+            this.prisma.token.findMany({
+                where: { status: "ACTIVE", ...(notHidden ? { id: notHidden } : {}) },
+                include: { market: true },
+                orderBy: { progress: "desc" },
+                take: 10,
+            }),
+            this.prisma.token.findMany({
+                where: { featured: true, ...(notHidden ? { id: notHidden } : {}) },
+                include: { market: true },
+                orderBy: { createdAt: "desc" },
+                take: 10,
+            }),
+        ]);
+        // console.log(newlyCreated)
+        // Attach stats to each token in each column
+        function addStats(tokens) {
+            return tokens.map((token) => ({
+                ...token,
+                stats: {
+                    users: userCountMap[token.id] || 0,
+                    top10: top10Map[token.id] || 0,
+                },
+                volume: `$${(volumeMap[token.id] || 0).toLocaleString()}`,
+                solCollected: token.market && token.market.solCollected != null
+                    ? token.market.solCollected
+                    : 0,
+            }));
+        }
+        const columns = [
+            {
+                title: "Newly Created",
+                type: "newly_created",
+                cards: addStats(newlyCreated),
+            },
+            {
+                title: "Graduate Soon",
+                type: "graduate_soon",
+                cards: addStats(graduateSoon),
+            },
+            {
+                title: "Featured",
+                type: "featured",
+                cards: addStats(featured),
+            },
+        ];
+        return columns;
+    }
+    async createCard(data) {
+        // Changed AdvanceCard to any as it's not exported
+        return this.prisma.advanceCard.create({
+            data,
+            include: {
+                token: true,
+                column: true,
+            },
+        });
+    }
+    async updateCard(id, data) {
+        // Changed AdvanceCard to any as it's not exported
+        return this.prisma.advanceCard.update({
+            where: { id },
+            data,
+            include: {
+                token: true,
+                column: true,
+            },
+        });
+    }
+    async deleteCard(id) {
+        // Changed AdvanceCard to any as it's not exported
+        return this.prisma.advanceCard.delete({
+            where: { id },
+        });
+    }
+    async getCardsByColumn(columnId) {
+        // Changed AdvanceCard to any as it's not exported
+        return this.prisma.advanceCard.findMany({
+            where: {
+                columnId,
+            },
+            include: {
+                token: true,
+            },
+        });
+    }
+    async moveCard(cardId, newColumnId) {
+        // Changed AdvanceCard to any as it's not exported
+        return this.prisma.advanceCard.update({
+            where: { id: cardId },
+            data: {
+                columnId: newColumnId,
+            },
+            include: {
+                token: true,
+                column: true,
+            },
+        });
+    }
 }
 exports.AdvanceService = AdvanceService;

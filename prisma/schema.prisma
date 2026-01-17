@@ -39,7 +39,7 @@ model User {
 
 /// Meme coin/token created and traded on the platform
 model Tag {
-  id      String    @id
+  id      String    @id 
   label   String
   active  Boolean   @default(true)
   count   Int       @default(0)
@@ -95,6 +95,7 @@ model Token {
   liveStreamChatMessages LiveStreamChatMessage[]
   viewCount Int? @default(0)
   lastViewReset DateTime? @default(now())
+  rewardStatus String?  @default("PENDING")
   
 }
 
@@ -412,3 +413,8 @@ enum RewardStatus {
   WITHDRAWN
 }
 
+model LiveSolPrice {
+  symbol      String  @id
+  price       Float
+  createdAt   DateTime @default(now())
+}

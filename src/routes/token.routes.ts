@@ -18,6 +18,7 @@ tokenRouter.get("/:id/holders", tokenController.getTokenHolders);
 tokenRouter.get("/:coinId/top-holders", tokenController.getTopHoldersByCoinId);
 tokenRouter.post("/:coinId/similar", tokenController.getSimilarCoins);
 tokenRouter.get("/tag/:tagId", tokenController.getTokensByTag);
+
 tokenRouter.post(
   "/updateGraduationStatus",
   tokenController.updateGraduationStatus
