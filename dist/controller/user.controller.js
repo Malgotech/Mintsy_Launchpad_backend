@@ -295,8 +295,7 @@ class UserController {
             });
             const followingIds = currentUserFollowing.map((f) => f.followingId);
             const result = users.map((user) => {
-                const count = topFollowed.find((f) => f.followingId === user.id)?._count
-                    .followerId || 0;
+                const count = topFollowed.find((f) => f.followingId === user.id)?._count.followerId || 0;
                 return {
                     ...user,
                     followerCount: count,

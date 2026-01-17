@@ -66,15 +66,24 @@ export class CardController {
       });
       if (sortValue === "graduatingsoon") {
         // Sort by progress if graduatingsoon
-        tokens.sort((a, b) => (b.progress || 0) - (a.progress || 0));
+        tokens.sort(
+          (a: { progress: any }, b: { progress: any }) =>
+            (b.progress || 0) - (a.progress || 0),
+        );
       }
       if (sortValue === "popular") {
         // Sort by finalMarketCap if popular
-        tokens.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+        tokens.sort(
+          (a: { viewCount: any }, b: { viewCount: any }) =>
+            (b.viewCount || 0) - (a.viewCount || 0),
+        );
       }
       if (sortValue === "price") {
         // Sort by lastPrice if price
-        tokens.sort((a, b) => (b.lastPrice || 0) - (a.lastPrice || 0));
+        tokens.sort(
+          (a: { lastPrice: any }, b: { lastPrice: any }) =>
+            (b.lastPrice || 0) - (a.lastPrice || 0),
+        );
       }
 
       // Fetch SOL price in USD once
@@ -97,16 +106,16 @@ export class CardController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
 
       // For each token, count users holding it (tokenAmount > 0)
@@ -119,10 +128,10 @@ export class CardController {
             },
           });
           return { tokenId: token.id, count };
-        })
+        }),
       );
       const userCountMap = Object.fromEntries(
-        userCounts.map((u) => [u.tokenId, u.count])
+        userCounts.map((u) => [u.tokenId, u.count]),
       );
 
       // For each token, calculate top10 percentage
@@ -140,14 +149,14 @@ export class CardController {
           });
           const top10Sum = top10.reduce(
             (sum: number, ut: any) => sum + (ut.tokenAmount || 0),
-            0
+            0,
           );
           const percent = Number(((top10Sum / token.supply) * 100).toFixed(2));
           return { tokenId: token.id, percent };
-        })
+        }),
       );
       const top10Map = Object.fromEntries(
-        top10Percents.map((t) => [t.tokenId, t.percent])
+        top10Percents.map((t) => [t.tokenId, t.percent]),
       );
 
       // Calculate threadCount for each token
@@ -158,7 +167,7 @@ export class CardController {
             where: { coin_id: token.id.toString() },
             select: { id: true },
           });
-          const threadIds = threads.map((t) => t.id);
+          const threadIds = threads.map((t: { id: any }) => t.id);
           const threadCount = threads.length;
           let replyCount = 0;
           if (threadIds.length > 0) {
@@ -167,10 +176,10 @@ export class CardController {
             });
           }
           return { tokenId: token.id, threadCount: threadCount + replyCount };
-        })
+        }),
       );
       const threadCountMap = Object.fromEntries(
-        threadCounts.map((tc) => [tc.tokenId, tc.threadCount])
+        threadCounts.map((tc) => [tc.tokenId, tc.threadCount]),
       );
       // console.log(threadCountMap[1])
 
@@ -187,7 +196,7 @@ export class CardController {
         replies:
           token.socials?.reduce(
             (acc: number, s: any) => acc + (s.commentCount || 0),
-            0
+            0,
           ) || 0,
         threadCount: threadCountMap[token.id] || 0,
         altText: `${token.name} Coin`,
@@ -281,16 +290,16 @@ export class CardController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
 
       // Calculate threadCount for each token
@@ -301,7 +310,7 @@ export class CardController {
             where: { coin_id: token.id.toString() },
             select: { id: true },
           });
-          const threadIds = threads.map((t) => t.id);
+          const threadIds = threads.map((t: { id: any }) => t.id);
           const threadCount = threads.length;
           let replyCount = 0;
           if (threadIds.length > 0) {
@@ -310,10 +319,10 @@ export class CardController {
             });
           }
           return { tokenId: token.id, threadCount: threadCount + replyCount };
-        })
+        }),
       );
       const threadCountMap = Object.fromEntries(
-        threadCounts.map((tc) => [tc.tokenId, tc.threadCount])
+        threadCounts.map((tc) => [tc.tokenId, tc.threadCount]),
       );
       // console.log(threadCountMap[1])
 
@@ -326,11 +335,11 @@ export class CardController {
             },
           });
           return { tokenId: token.id, count };
-        })
+        }),
       );
 
       const userCountMap = Object.fromEntries(
-        userCounts.map((u) => [u.tokenId, u.count])
+        userCounts.map((u) => [u.tokenId, u.count]),
       );
 
       const cards = tokens.map((token: any) => ({
@@ -347,7 +356,7 @@ export class CardController {
         replies:
           token.socials?.reduce(
             (acc: number, s: any) => acc + (s.commentCount || 0),
-            0
+            0,
           ) || 0,
         network: token.network || "solana",
         threadCount: threadCountMap[token.id.toString()] || 0,
@@ -474,16 +483,16 @@ export class CardController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
 
       // Calculate threadCount for each token
@@ -493,7 +502,7 @@ export class CardController {
             where: { coin_id: token.id.toString() },
             select: { id: true },
           });
-          const threadIds = threads.map((t) => t.id);
+          const threadIds = threads.map((t: { id: any }) => t.id);
           const threadCount = threads.length;
           let replyCount = 0;
           if (threadIds.length > 0) {
@@ -502,10 +511,10 @@ export class CardController {
             });
           }
           return { tokenId: token.id, threadCount: threadCount + replyCount };
-        })
+        }),
       );
       const threadCountMap = Object.fromEntries(
-        threadCounts.map((tc) => [tc.tokenId, tc.threadCount])
+        threadCounts.map((tc) => [tc.tokenId, tc.threadCount]),
       );
 
       // Handle LastTrade sorting after fetching
@@ -542,7 +551,7 @@ export class CardController {
         replies:
           token.socials?.reduce(
             (acc: number, s: any) => acc + (s.commentCount || 0),
-            0
+            0,
           ) || 0,
         nsfw: token.nsfw || false,
         tags: token.tags.map((tag: any) => tag.id),
@@ -689,16 +698,16 @@ export class CardController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
 
       const threadCounts = await Promise.all(
@@ -707,7 +716,7 @@ export class CardController {
             where: { coin_id: token.id.toString() },
             select: { id: true },
           });
-          const threadIds = threads.map((t) => t.id);
+          const threadIds = threads.map((t: { id: any }) => t.id);
           const threadCount = threads.length;
           let replyCount = 0;
           if (threadIds.length > 0) {
@@ -716,21 +725,21 @@ export class CardController {
             });
           }
           return { tokenId: token.id, threadCount: threadCount + replyCount };
-        })
+        }),
       );
       const threadCountMap = Object.fromEntries(
-        threadCounts.map((tc) => [tc.tokenId, tc.threadCount])
+        threadCounts.map((tc) => [tc.tokenId, tc.threadCount]),
       );
 
       if (filter === "LastTrade") {
         tokens.sort((a: any, b: any) => {
           const aLastTrade = a.trades?.sort(
             (x: any, y: any) =>
-              new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()
+              new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime(),
           )[0]?.createdAt;
           const bLastTrade = b.trades?.sort(
             (x: any, y: any) =>
-              new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime()
+              new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime(),
           )[0]?.createdAt;
 
           if (!aLastTrade && !bLastTrade) return 0;
@@ -762,7 +771,7 @@ export class CardController {
       if (filter === "LastReply") {
         // Sort by last reply time
         const tokenLastReplies = await Promise.all(
-          tokens.map(async (token) => {
+          tokens.map(async (token: { id: { toString: () => any } }) => {
             const thread = await prisma.thread.findFirst({
               where: { coin_id: token.id.toString() },
               include: {
@@ -791,15 +800,15 @@ export class CardController {
                 lastActivityTime: lastThreadTime || new Date(0), // Default to epoch if no activity
               };
             }
-          })
+          }),
         );
 
-        tokens.sort((a, b) => {
+        tokens.sort((a: { id: any }, b: { id: any }) => {
           const aActivity = tokenLastReplies.find(
-            (t) => t.tokenId === a.id
+            (t) => t.tokenId === a.id,
           )?.lastActivityTime;
           const bActivity = tokenLastReplies.find(
-            (t) => t.tokenId === b.id
+            (t) => t.tokenId === b.id,
           )?.lastActivityTime;
 
           if (!aActivity && !bActivity) return 0;
@@ -835,11 +844,11 @@ export class CardController {
             },
           });
           return { tokenId: token.id, count };
-        })
+        }),
       );
 
       const userCountMap = Object.fromEntries(
-        userCounts.map((u) => [u.tokenId, u.count])
+        userCounts.map((u) => [u.tokenId, u.count]),
       );
 
       const cards = tokens.map((token: any) => ({
@@ -860,7 +869,7 @@ export class CardController {
         replies:
           token.socials?.reduce(
             (acc: number, s: any) => acc + (s.commentCount || 0),
-            0
+            0,
           ) || 0,
         nsfw: token.nsfw || false,
         tags: token.tags.map((tag: any) => tag.id),
@@ -946,7 +955,7 @@ export class CardController {
         include: { token: true },
       });
       // Only return the token objects
-      const tokens = hiddenCards.map((hc) => hc.token);
+      const tokens = hiddenCards.map((hc: { token: any }) => hc.token);
       return res.json({
         success: true,
         data: {

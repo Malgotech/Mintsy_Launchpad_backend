@@ -380,65 +380,116 @@ export class TradeController {
 
       /* ================= TRANSACTION (ONLY WRITES) ================= */
 
-      const txResult = await prisma.$transaction(async (tx) => {
-        const trade = await tx.trade.create({
-          data: {
-            userId,
-            tokenId: tokenIdInt,
-            marketId: market.id,
-            amount: tokenAmt,
-            price: solAmt,
-            side,
-            txHash,
-            marketCap: marketCapF,
-          },
-        });
-
-        const existing = await tx.userToken.findUnique({
-          where: { userId_tokenId: { userId, tokenId: tokenIdInt } },
-        });
-
-        let userToken;
-        if (existing) {
-          userToken = await tx.userToken.update({
-            where: { userId_tokenId: { userId, tokenId: tokenIdInt } },
-            data: {
-              solAmount:
-                side === "BUY"
-                  ? (existing.solAmount || 0) + solAmt
-                  : Math.max((existing.solAmount || 0) - solAmt, 0),
-              tokenAmount:
-                side === "BUY"
-                  ? (existing.tokenAmount || 0) + tokenAmt
-                  : Math.max((existing.tokenAmount || 0) - tokenAmt, 0),
-              tokenName: token.name,
-              tokenSymbol: token.symbol,
-            },
-          });
-        } else if (side === "BUY") {
-          userToken = await tx.userToken.create({
+      const txResult = await prisma.$transaction(
+        async (tx: {
+          trade: {
+            create: (arg0: {
+              data: {
+                userId: any;
+                tokenId: any;
+                marketId: any;
+                amount: any;
+                price: any;
+                side: any;
+                txHash: any;
+                marketCap: number;
+              };
+            }) => any;
+          };
+          userToken: {
+            findUnique: (arg0: {
+              where: { userId_tokenId: { userId: any; tokenId: any } };
+            }) => any;
+            update: (arg0: {
+              where: { userId_tokenId: { userId: any; tokenId: any } };
+              data: {
+                solAmount: any;
+                tokenAmount: any;
+                tokenName: any;
+                tokenSymbol: any;
+              };
+            }) => any;
+            create: (arg0: {
+              data: {
+                userId: any;
+                tokenId: any;
+                solAmount: any;
+                tokenAmount: any;
+                tokenName: any;
+                tokenSymbol: any;
+              };
+            }) => any;
+          };
+          token: {
+            update: (arg0: {
+              where: { id: any };
+              data: {
+                finalMarketCap: number;
+                lastPrice: number;
+                progress: number;
+              };
+            }) => any;
+          };
+        }) => {
+          const trade = await tx.trade.create({
             data: {
               userId,
               tokenId: tokenIdInt,
-              solAmount: solAmt,
-              tokenAmount: tokenAmt,
-              tokenName: token.name,
-              tokenSymbol: token.symbol,
+              marketId: market.id,
+              amount: tokenAmt,
+              price: solAmt,
+              side,
+              txHash,
+              marketCap: marketCapF,
             },
           });
-        }
 
-        await tx.token.update({
-          where: { id: tokenIdInt },
-          data: {
-            finalMarketCap: marketCapF,
-            lastPrice: pricePerTokenInSol,
-            progress,
-          },
-        });
+          const existing = await tx.userToken.findUnique({
+            where: { userId_tokenId: { userId, tokenId: tokenIdInt } },
+          });
 
-        return { trade, userToken };
-      });
+          let userToken;
+          if (existing) {
+            userToken = await tx.userToken.update({
+              where: { userId_tokenId: { userId, tokenId: tokenIdInt } },
+              data: {
+                solAmount:
+                  side === "BUY"
+                    ? (existing.solAmount || 0) + solAmt
+                    : Math.max((existing.solAmount || 0) - solAmt, 0),
+                tokenAmount:
+                  side === "BUY"
+                    ? (existing.tokenAmount || 0) + tokenAmt
+                    : Math.max((existing.tokenAmount || 0) - tokenAmt, 0),
+                tokenName: token.name,
+                tokenSymbol: token.symbol,
+              },
+            });
+          } else if (side === "BUY") {
+            userToken = await tx.userToken.create({
+              data: {
+                userId,
+                tokenId: tokenIdInt,
+                solAmount: solAmt,
+                tokenAmount: tokenAmt,
+                tokenName: token.name,
+                tokenSymbol: token.symbol,
+              },
+            });
+          }
+
+          await tx.token.update({
+            where: { id: tokenIdInt },
+            data: {
+              finalMarketCap: marketCapF,
+              lastPrice: pricePerTokenInSol,
+              progress,
+            },
+          });
+
+          return { trade, userToken };
+        },
+      );
 
       /* ================= POST TRANSACTION (SAME LOGIC) ================= */
 
@@ -457,7 +508,7 @@ export class TradeController {
         });
 
         const top10Sum = top10Holders.reduce(
-          (sum, ut) => sum + (ut.tokenAmount || 0),
+          (sum: any, ut: { tokenAmount: any }) => sum + (ut.tokenAmount || 0),
           0,
         );
         top10 = Number(((top10Sum / token.supply) * 100).toFixed(2));
@@ -468,7 +519,7 @@ export class TradeController {
       });
 
       const solVolume = trades.reduce(
-        (sum, t) => sum + Number(t.price || 0),
+        (sum: number, t: { price: any }) => sum + Number(t.price || 0),
         0,
       );
       const volume = solVolume * solPrice;
@@ -551,22 +602,34 @@ export class TradeController {
       return res.status(200).json({
         success: true,
         data: {
-          trades: trades.map((trade) => ({
-            id: `trade_${trade.id}`,
-            orderId: `order_${trade.txHash}`,
-            coinId: trade.tokenId,
-            type: trade.side,
-            amount: trade.price,
-            currency: "SOL",
-            tokensReceived: trade.amount,
-            price: `$${trade.price}`,
-            status: "completed",
-            timestamp: trade.createdAt.toISOString(),
-            txHash: trade.txHash,
-            marketCap: trade?.marketCap || 0, // Assuming marketCap is stored in the trade
-            userName: trade.user?.name || null,
-            userId: trade.user.id || null,
-          })),
+          trades: trades.map(
+            (trade: {
+              id: any;
+              txHash: any;
+              tokenId: any;
+              side: any;
+              price: any;
+              amount: any;
+              createdAt: { toISOString: () => any };
+              marketCap: any;
+              user: { name: any; id: any };
+            }) => ({
+              id: `trade_${trade.id}`,
+              orderId: `order_${trade.txHash}`,
+              coinId: trade.tokenId,
+              type: trade.side,
+              amount: trade.price,
+              currency: "SOL",
+              tokensReceived: trade.amount,
+              price: `$${trade.price}`,
+              status: "completed",
+              timestamp: trade.createdAt.toISOString(),
+              txHash: trade.txHash,
+              marketCap: trade?.marketCap || 0, // Assuming marketCap is stored in the trade
+              userName: trade.user?.name || null,
+              userId: trade.user.id || null,
+            }),
+          ),
           pagination: {
             total: totalTrades,
             limit: Number(limit),
@@ -606,7 +669,8 @@ export class TradeController {
       });
 
       const totalVolume = trades.reduce(
-        (sum, trade) => sum + Number(trade.amount || 0),
+        (sum: number, trade: { amount: any }) =>
+          sum + Number(trade.amount || 0),
         0,
       );
 

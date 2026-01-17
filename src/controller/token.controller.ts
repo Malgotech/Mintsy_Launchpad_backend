@@ -162,7 +162,7 @@ export class TokenController {
           });
           const top10Sum = top10Holders.reduce(
             (sum: number, ut: any) => sum + (ut.tokenAmount || 0),
-            0
+            0,
           );
           top10 = Number(((top10Sum / tokenSupply) * 100).toFixed(2));
         }
@@ -194,7 +194,7 @@ export class TokenController {
           some: {
             id: {
               in: tagArray.map((tag: any) =>
-                String(tag).toLowerCase().replace(/\s+/g, "-")
+                String(tag).toLowerCase().replace(/\s+/g, "-"),
               ),
             },
           },
@@ -228,16 +228,16 @@ export class TokenController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
       // Attach volume to each token
       const tokensWithVolume = tokens.map((token: any) => ({
@@ -345,7 +345,7 @@ export class TokenController {
       });
       const solAmount = trades.reduce(
         (sum: number, t: any) => sum + (Number(t.price) || 0),
-        0
+        0,
       );
       const volume = solPrice ? solAmount * solPrice : 0;
 
@@ -428,10 +428,13 @@ export class TokenController {
             }
           : null,
         socials:
-          token.socials?.reduce((acc: any, curr) => {
-            acc[curr.type.toLowerCase()] = curr.url;
-            return acc;
-          }, {}) || {},
+          token.socials?.reduce(
+            (acc: any, curr: { type: string; url: any }) => {
+              acc[curr.type.toLowerCase()] = curr.url;
+              return acc;
+            },
+            {},
+          ) || {},
       };
 
       return res.json({
@@ -472,7 +475,7 @@ export class TokenController {
       if (lastTrade) {
         whereClause.lastTradeAt = {
           gte: new Date(
-            Date.now() - parseInt(lastTrade as string) * 24 * 60 * 60 * 1000
+            Date.now() - parseInt(lastTrade as string) * 24 * 60 * 60 * 1000,
           ),
         };
       }
@@ -480,7 +483,7 @@ export class TokenController {
       if (creationTime) {
         whereClause.createdAt = {
           gte: new Date(
-            Date.now() - parseInt(creationTime as string) * 24 * 60 * 60 * 1000
+            Date.now() - parseInt(creationTime as string) * 24 * 60 * 60 * 1000,
           ),
         };
       }
@@ -516,16 +519,16 @@ export class TokenController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
       // Attach volume to each token
       const tokensWithVolume = tokens.map((token: any) => ({
@@ -666,7 +669,7 @@ export class TokenController {
       const { id } = req.params;
       const { progress } = req.body;
       console.log(
-        typeof progress !== "number" || progress < 0 || progress > 100
+        typeof progress !== "number" || progress < 0 || progress > 100,
       );
 
       if (progress < 0 || progress > 100) {
@@ -721,7 +724,7 @@ export class TokenController {
         .split(/\s+/)
         .filter(
           (word) =>
-            word.length > 3 && !["the", "and", "for", "with"].includes(word)
+            word.length > 3 && !["the", "and", "for", "with"].includes(word),
         );
 
       const searchWordSet = new Set(searchWords);
@@ -751,29 +754,34 @@ export class TokenController {
       });
 
       // Score tokens
-      const scoredTokens = tokens.map((token) => {
-        const tokenWords = new Set(
-          token
-            .description!.toLowerCase()
-            .split(/\s+/)
-            .filter((word) => word.length > 3)
-        );
+      const scoredTokens = tokens.map(
+        (token: { description: any; finalMarketCap: any }) => {
+          const tokenWords = new Set(
+            token
+              .description!.toLowerCase()
+              .split(/\s+/)
+              .filter((word: string | any[]) => word.length > 3),
+          );
 
-        const matchScore = [...searchWordSet].filter((word) =>
-          tokenWords.has(word)
-        ).length;
+          const matchScore = [...searchWordSet].filter((word) =>
+            tokenWords.has(word),
+          ).length;
 
-        return {
-          ...token,
-          matchScore,
-          finalMarketCapUSD: token.finalMarketCap,
-        };
-      });
+          return {
+            ...token,
+            matchScore,
+            finalMarketCapUSD: token.finalMarketCap,
+          };
+        },
+      );
 
       // Filter + sort + limit
       const similarCoins = scoredTokens
-        .filter((token) => token.matchScore >= 2)
-        .sort((a, b) => b.matchScore - a.matchScore)
+        .filter((token: { matchScore: number }) => token.matchScore >= 2)
+        .sort(
+          (a: { matchScore: number }, b: { matchScore: number }) =>
+            b.matchScore - a.matchScore,
+        )
         .slice(0, Number(limit));
 
       return res.json({
@@ -829,7 +837,7 @@ export class TokenController {
       });
       const solAmount = trades.reduce(
         (sum: number, t: any) => sum + (Number(t.price) || 0),
-        0
+        0,
       );
       const volume = solPrice ? solAmount * solPrice : 0;
 
@@ -977,7 +985,7 @@ export class TokenController {
       }, {});
 
       const holderList = Object.values(holders).filter(
-        (holder: any) => holder.amount > 0
+        (holder: any) => holder.amount > 0,
       );
 
       return res.json({
@@ -1069,16 +1077,16 @@ export class TokenController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
       // Attach volume to each token
       const tokensWithVolume = liveTokens.map((token: any) => ({
@@ -1140,16 +1148,16 @@ export class TokenController {
           });
           const solAmount = trades.reduce(
             (sum: number, t: any) => sum + (Number(t.price) || 0),
-            0
+            0,
           );
           return {
             tokenId: token.id,
             volume: solPrice ? solAmount * solPrice : 0,
           };
-        })
+        }),
       );
       const volumeMap = Object.fromEntries(
-        volumes.map((v) => [v.tokenId, v.volume])
+        volumes.map((v) => [v.tokenId, v.volume]),
       );
       // Attach volume to each token
       const tokensWithVolume = tokens.map((token: any) => ({
@@ -1213,7 +1221,7 @@ export class TokenController {
             dollarPrice: updated.lastPrice,
             graduatedAt: updated.graduatedAt,
             coinId: updated.id,
-          }
+          },
         );
         console.log("Axios response:", response.data);
 
@@ -1230,12 +1238,12 @@ export class TokenController {
             const response = await axios.post(
               "https://api.mintsyplus.fun/addTrade",
               trades, // send the array directly
-              { headers: { "Content-Type": "application/json" } }
+              { headers: { "Content-Type": "application/json" } },
             );
           } catch (axiosError: any) {
             console.error(
               "Error calling addGraduatedTrade API:",
-              axiosError.response?.data || axiosError.message
+              axiosError.response?.data || axiosError.message,
             );
           }
         } else {
@@ -1244,7 +1252,7 @@ export class TokenController {
       } catch (axiosError: any) {
         console.error(
           "Error calling addGraduatedToken API:",
-          axiosError.message
+          axiosError.message,
         );
       }
 

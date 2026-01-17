@@ -15,7 +15,6 @@ export class SearchController {
           { symbol: { contains: searchTerm, mode: "insensitive" } },
           { description: { contains: searchTerm, mode: "insensitive" } },
           { mintAccount: { contains: searchTerm, mode: "insensitive" } },
-          
         ],
       };
 
@@ -31,7 +30,7 @@ export class SearchController {
         },
       });
 
-      const results = tokens.map((token) => ({
+      const results = tokens.map((token: any) => ({
         id: token.id.toString(),
         type: "coin",
         name: token.name,
@@ -58,7 +57,9 @@ export class SearchController {
         success: true,
         data: {
           results,
-          suggestions: suggestions.map((s) => s.name.toUpperCase()),
+          suggestions: suggestions.map((s: { name: string }) =>
+            s.name.toUpperCase(),
+          ),
           totalResults,
         },
       });
@@ -69,5 +70,5 @@ export class SearchController {
         error: "Internal Server Error",
       });
     }
-  }
+  };
 }

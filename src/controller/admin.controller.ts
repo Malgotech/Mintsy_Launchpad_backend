@@ -132,28 +132,46 @@ export class AdminController {
       });
 
       // Shape response to match frontend
-      const formattedTokens = tokens.map((token) => ({
-        id: token.id,
-        name: token.name,
-        symbol: token.symbol,
-        status: token.graduationStatus, // ✅ mapped
-        featured: token.featured,
-        blacklisted: token.blacklisted,
-        flagged: token.flagged,
-        mintAccount: token.mintAccount,
-        createdAt: token.createdAt,
-        cid: token.cid,
-        supply: token.supply,
-        network: token.network,
-        creator: token.creator,
-        market: {
-          currentPrice: null,
-          marketCap: Number(token.finalMarketCap), // ✅ mapped
-          volume24h: 0,
-        },
-        graduationStatus: token.graduationStatus,
-        rewardStatus: token.rewardStatus,
-      }));
+      const formattedTokens = tokens.map(
+        (token: {
+          id: any;
+          name: any;
+          symbol: any;
+          graduationStatus: any;
+          featured: any;
+          blacklisted: any;
+          flagged: any;
+          mintAccount: any;
+          createdAt: any;
+          cid: any;
+          supply: any;
+          network: any;
+          creator: any;
+          finalMarketCap: any;
+          rewardStatus: any;
+        }) => ({
+          id: token.id,
+          name: token.name,
+          symbol: token.symbol,
+          status: token.graduationStatus, // ✅ mapped
+          featured: token.featured,
+          blacklisted: token.blacklisted,
+          flagged: token.flagged,
+          mintAccount: token.mintAccount,
+          createdAt: token.createdAt,
+          cid: token.cid,
+          supply: token.supply,
+          network: token.network,
+          creator: token.creator,
+          market: {
+            currentPrice: null,
+            marketCap: Number(token.finalMarketCap), // ✅ mapped
+            volume24h: 0,
+          },
+          graduationStatus: token.graduationStatus,
+          rewardStatus: token.rewardStatus,
+        }),
+      );
 
       return res.json({
         success: true,
@@ -380,7 +398,7 @@ export class AdminController {
               23,
               59,
               59,
-              999
+              999,
             );
             break;
 
@@ -527,7 +545,7 @@ export class AdminController {
             count: activeTradersCount,
             percentageChange: percentChange(
               activeTradersCount,
-              prevActiveTradersCount
+              prevActiveTradersCount,
             ),
             trend: activeTradersCount >= prevActiveTradersCount ? "up" : "down",
             description: "Unique traders in period",
@@ -629,42 +647,68 @@ export class AdminController {
         },
       });
 
-      const formattedTokens = tokens.map((token) => {
-        // Map socials to object
-        const socials: Record<string, string> = {};
-        token.socials.forEach((link) => {
-          if (link.type === "TWITTER") socials.twitter = link.url;
-          if (link.type === "TELEGRAM") socials.telegram = link.url;
-          if (link.type === "DISCORD") socials.discord = link.url;
-          if (link.type === "WEBSITE") socials.website = link.url;
-        });
+      const formattedTokens = tokens.map(
+        (token: {
+          socials: any[];
+          id: any;
+          mintAccount: any;
+          symbol: any;
+          name: any;
+          description: any;
+          imageUrl: any;
+          status: any;
+          featured: any;
+          blacklisted: any;
+          flagged: any;
+          supply: any;
+          decimals: any;
+          network: any;
+          createdAt: any;
+          graduatedAt: any;
+          creator: any;
+          market: any;
+          tags: any;
+          userCount: any;
+          replyCount: any;
+          isLive: any;
+          nsfw: any;
+        }) => {
+          // Map socials to object
+          const socials: Record<string, string> = {};
+          token.socials.forEach((link: { type: string; url: string }) => {
+            if (link.type === "TWITTER") socials.twitter = link.url;
+            if (link.type === "TELEGRAM") socials.telegram = link.url;
+            if (link.type === "DISCORD") socials.discord = link.url;
+            if (link.type === "WEBSITE") socials.website = link.url;
+          });
 
-        return {
-          id: token.id,
-          mintAccount: token.mintAccount,
-          symbol: token.symbol,
-          name: token.name,
-          description: token.description,
-          imageUrl: token.imageUrl,
-          status: token.status,
-          featured: token.featured,
-          blacklisted: token.blacklisted,
-          flagged: token.flagged,
-          supply: token.supply,
-          decimals: token.decimals,
-          network: token.network,
-          createdAt: token.createdAt,
-          graduatedAt: token.graduatedAt,
-          creator: token.creator,
-          market: token.market,
-          socials,
-          tags: token.tags,
-          userCount: token.userCount,
-          replyCount: token.replyCount,
-          isLive: token.isLive,
-          nsfw: token.nsfw,
-        };
-      });
+          return {
+            id: token.id,
+            mintAccount: token.mintAccount,
+            symbol: token.symbol,
+            name: token.name,
+            description: token.description,
+            imageUrl: token.imageUrl,
+            status: token.status,
+            featured: token.featured,
+            blacklisted: token.blacklisted,
+            flagged: token.flagged,
+            supply: token.supply,
+            decimals: token.decimals,
+            network: token.network,
+            createdAt: token.createdAt,
+            graduatedAt: token.graduatedAt,
+            creator: token.creator,
+            market: token.market,
+            socials,
+            tags: token.tags,
+            userCount: token.userCount,
+            replyCount: token.replyCount,
+            isLive: token.isLive,
+            nsfw: token.nsfw,
+          };
+        },
+      );
 
       return res.json({
         success: true,

@@ -272,7 +272,7 @@ export class UserController {
         });
 
         // Get the current user's following relationships for these random users
-        const userIds = randomUsers.map((u) => u.id);
+        const userIds = randomUsers.map((u: { id: any }) => u.id);
         const currentUserFollowing = await prisma.follow.findMany({
           where: {
             followerId: userId,
@@ -283,9 +283,11 @@ export class UserController {
           },
         });
 
-        const followingIds = currentUserFollowing.map((f) => f.followingId);
+        const followingIds = currentUserFollowing.map(
+          (f: { followingId: any }) => f.followingId,
+        );
 
-        const result = randomUsers.map((user) => ({
+        const result = randomUsers.map((user: { id: any }) => ({
           ...user,
           followerCount: 0,
           isFollowing: followingIds.includes(user.id),
@@ -294,7 +296,9 @@ export class UserController {
         return res.status(200).json(result);
       }
 
-      const userIds = topFollowed.map((f) => f.followingId);
+      const userIds = topFollowed.map(
+        (f: { followingId: any }) => f.followingId,
+      );
 
       const users = await prisma.user.findMany({
         where: {
@@ -313,12 +317,15 @@ export class UserController {
         },
       });
 
-      const followingIds = currentUserFollowing.map((f) => f.followingId);
+      const followingIds = currentUserFollowing.map(
+        (f: { followingId: any }) => f.followingId,
+      );
 
-      const result = users.map((user) => {
+      const result = users.map((user: { id: any }) => {
         const count =
-          topFollowed.find((f) => f.followingId === user.id)?._count
-            .followerId || 0;
+          topFollowed.find(
+            (f: { followingId: any }) => f.followingId === user.id,
+          )?._count.followerId || 0;
         return {
           ...user,
           followerCount: count,
