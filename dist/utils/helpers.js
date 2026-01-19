@@ -7,7 +7,6 @@ exports.getTimeAgo = getTimeAgo;
 exports.createBaselineCandle = createBaselineCandle;
 exports.calculateMarketCapFromTrade = calculateMarketCapFromTrade;
 exports.generateOHLCVCandles = generateOHLCVCandles;
-exports.getIntervalInMs = getIntervalInMs;
 exports.getTimeframeStartTime = getTimeframeStartTime;
 exports.getSolPriceUSD = getSolPriceUSD;
 const axios_1 = __importDefault(require("axios"));
@@ -102,7 +101,9 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
     if (!trades || trades.length === 0)
         return [];
+    console.log("interval", interval);
     let intervalMs = getIntervalInMs(interval);
+    console.log("intervalMs", intervalMs);
     if (intervalMs <= 0) {
         console.warn("generateOHLCVCandles: invalid interval, using default 1h");
         intervalMs = 60 * 60 * 1000; // default to 1h
@@ -197,15 +198,27 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     return candles;
 }
 function getIntervalInMs(interval) {
-    const value = parseInt(interval);
-    const unit = interval.slice(-1).toLowerCase();
-    switch (unit) {
-        case "h":
-            return value * 60 * 60 * 1000;
-        case "m":
-            return value * 60 * 1000;
+    switch (interval) {
+        case "60s":
+        case "1m":
+            return 60 * 1000;
+        case "5m":
+            return 5 * 60 * 1000;
+        case "15m":
+            return 15 * 60 * 1000;
+        case "1h":
+            return 60 * 60 * 1000;
+        case "4h":
+            return 4 * 60 * 60 * 1000;
+        case "1D":
+            return 24 * 60 * 60 * 1000;
+        case "1W":
+            return 7 * 24 * 60 * 60 * 1000;
+        case "1M":
+            return 30 * 24 * 60 * 60 * 1000; // approx month
         default:
-            return 60 * 60 * 1000; // default to 1h
+            console.warn("Unknown interval:", interval);
+            return 0;
     }
 }
 // Helper function to get start time based on timeframe
@@ -241,42 +254,6 @@ function getTimeframeStartTime(timeframe) {
             return new Date(now.getTime() - 24 * 60 * 60 * 1000);
     }
 }
-/**
- * Fetch the current SOL to USD price from CoinGecko
- * Returns a number (price in USD) or null if failed
- */
-// export async function getSolPriceUSD() {
-//   const API_KEY = "9b4cc00e-85f2-412f-8669-5b6b4ef12f0e"; // store your key securely
-//   const url =
-//     "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
-//   try {
-//     const { data } = await axios.get(url, {
-//       params: {
-//         symbol: "SOL",
-//         convert: "USD",
-//       },
-//       headers: {
-//         "X-CMC_PRO_API_KEY": API_KEY,
-//         Accept: "application/json",
-//       },
-//       timeout: 5000, // optional: set a timeout
-//     });
-//     const price = data.data.SOL.quote.USD.price;
-//     if (!price) {
-//       return 0;
-//     }
-//     console.log("SOL price via CMC:", price);
-//     return parseFloat(price);
-//   } catch (error: any) {
-//     console.error(
-//       "Error fetching SOL price from CMC:",
-//       error.message,
-//       error.response?.data
-//     );
-//     // fallback to another API (e.g. CoinGecko) if needed
-//     return 0;
-//   }
-// }
 async function getSolPriceUSD() {
     try {
         const { data } = await axios_1.default.get("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT");
