@@ -1,5 +1,6 @@
 import axios from "axios";
 import { prisma } from "../service/prismaService";
+import { log } from "console";
 
 // Default starting value for chart candles (4.4k as per requirement)
 // const DEFAULT_CHART_START_VALUE = 4200;
@@ -33,9 +34,8 @@ export async function createBaselineCandle(
     where: { symbol: "SOL" },
   });
   const livePrice = await getSolPriceUSD();
-  console.log("DBprice", livePriceDB?.price);
+  console.log("DBpricefffffffffff", livePriceDB?.price);
   const solUsdPrice = livePriceDB?.price || livePrice;
-  console.log("solUsdPrice.... :>> ", solUsdPrice);
 
   const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
   const currentMarketCap = token.market?.marketCap || 0;
@@ -109,13 +109,10 @@ export async function generateOHLCVCandles(
   const livePrice = await getSolPriceUSD();
   const solUsdPrice = livePriceDB?.price || livePrice;
   console.log("DBprice", livePriceDB?.price);
-  console.log("solUsdPrice.... :>> ", solUsdPrice);
-
   const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
   if (!trades || trades.length === 0) return [];
-  console.log("interval", interval);
+
   let intervalMs = getIntervalInMs(interval);
-  console.log("intervalMs", intervalMs);
   if (intervalMs <= 0) {
     console.warn("generateOHLCVCandles: invalid interval, using default 1h");
     intervalMs = 60 * 60 * 1000; // default to 1h
@@ -227,7 +224,7 @@ export async function generateOHLCVCandles(
 
   // Sort candles by timestamp ascending
   candles.sort((a, b) => a.timestamp - b.timestamp);
-  console.log("candles", candles);
+
   return candles;
 }
 

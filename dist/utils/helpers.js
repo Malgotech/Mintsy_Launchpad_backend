@@ -136,11 +136,13 @@ async function generateOHLCVCandles(trades, interval, startTime) {
         grouped[intervalStart].push(trade);
     });
     const candles = [];
+    console.log("grouped", grouped);
     Object.entries(grouped).forEach(([intervalStart, group], index) => {
         // Calculate market caps using the helper function
         const marketCaps = group
             .map((t) => calculateMarketCapFromTrade(t))
             .filter((mc) => mc > 0); // Only include valid market cap data
+        console.log("marketCaps", marketCaps);
         if (marketCaps.length === 0)
             return; // skip if no valid market cap data
         const volumes = group
@@ -149,6 +151,7 @@ async function generateOHLCVCandles(trades, interval, startTime) {
             const amount = Number(t.tokenAmount ?? t.amount ?? 0);
             return isNaN(amount) ? 0 : amount;
         });
+        console.log("volumes", volumes);
         let open, close, high, low;
         // Special handling for the first candle - start from 4.4k
         if (index === 0) {

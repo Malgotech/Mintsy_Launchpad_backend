@@ -53,6 +53,7 @@ export class ChartController {
           market: true,
         },
       });
+      console.log("trades".length, trades.length);
 
       // If no trades exist, create a baseline candle from 4.4k to current market cap
       if (trades.length === 0) {

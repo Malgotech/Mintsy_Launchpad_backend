@@ -48,7 +48,7 @@ export const initSocket = (server: any) => {
             console.log(`👤 User ${userIdNum} is now active`);
           } else {
             console.warn(
-              `User with id ${userIdNum} does not exist. Skipping activity update.`
+              `User with id ${userIdNum} does not exist. Skipping activity update.`,
             );
           }
         }
@@ -90,7 +90,7 @@ export const initSocket = (server: any) => {
           });
 
           console.log(
-            `📊 Chart subscription added: ${socket.id} -> ${subscriptionKey}`
+            `📊 Chart subscription added: ${socket.id} -> ${subscriptionKey}`,
           );
         } catch (error) {
           console.error("Error subscribing to chart:", error);
@@ -99,7 +99,7 @@ export const initSocket = (server: any) => {
             error: "Failed to subscribe to chart data",
           });
         }
-      }
+      },
     );
 
     // Handle chart data unsubscription
@@ -122,9 +122,9 @@ export const initSocket = (server: any) => {
         socket.leave(subscriptionKey);
 
         console.log(
-          `📊 Chart subscription removed: ${socket.id} -> ${subscriptionKey}`
+          `📊 Chart subscription removed: ${socket.id} -> ${subscriptionKey}`,
         );
-      }
+      },
     );
 
     socket.on("disconnect", async () => {
@@ -148,7 +148,7 @@ export const initSocket = (server: any) => {
             console.log(`👤 User ${userId} is now inactive`);
           } else {
             console.warn(
-              `User with id ${userId} does not exist on disconnect. Skipping activity update.`
+              `User with id ${userId} does not exist on disconnect. Skipping activity update.`,
             );
           }
           // Remove socket to user mapping
@@ -177,9 +177,10 @@ export const initSocket = (server: any) => {
 async function getChartData(
   coinId: string,
   timeframe: string,
-  interval: string
+  interval: string,
 ) {
   try {
+    console.log("timeframe", timeframe);
     const startTime = getTimeframeStartTime(timeframe);
 
     // First, get the token and market data to understand the current state
@@ -202,6 +203,8 @@ async function getChartData(
     if (!token) {
       throw new Error("Token not found");
     }
+    console.log("token", token);
+    console.log("startTime", startTime);
 
     const trades = await prisma.trade.findMany({
       where: {
@@ -218,7 +221,7 @@ async function getChartData(
         market: true,
       },
     });
-
+    console.log("trades.lengthcccccc", trades.length);
     // If no trades exist, create a baseline candle from 4.4k to current market cap
     if (trades.length === 0) {
       const { createBaselineCandle } = await import("./helpers");
@@ -251,7 +254,7 @@ async function getChartData(
 export const emitChartUpdate = async (
   coinId: string,
   timeframe: string = "1D",
-  interval: string = "1h"
+  interval: string = "1h",
 ) => {
   try {
     const subscriptionKey = `${coinId}_${timeframe}_${interval}`;
@@ -260,7 +263,7 @@ export const emitChartUpdate = async (
     console.log(
       `📊 Emitting chart update for ${subscriptionKey}, subscribers: ${
         subscription?.size || 0
-      }`
+      }`,
     );
 
     if (subscription && subscription.size > 0) {
@@ -282,7 +285,7 @@ export const emitChartUpdate = async (
       io.to(subscriptionKey).emit("chart_data", updateData);
 
       console.log(
-        `✅ Chart update emitted for ${subscriptionKey} with ${chartData.length} candles`
+        `✅ Chart update emitted for ${subscriptionKey} with ${chartData.length} candles`,
       );
     } else {
       console.log(`ℹ️ No active subscribers for ${subscriptionKey}`);
@@ -298,7 +301,7 @@ export const emitChartUpdateForCoin = async (coinId: string) => {
   const intervals = ["1m", "5m", "1h", "4h", "1D"];
 
   console.log(
-    `🔄 Emitting chart updates for coin ${coinId} across all timeframes and intervals`
+    `🔄 Emitting chart updates for coin ${coinId} across all timeframes and intervals`,
   );
 
   for (const timeframe of timeframes) {
@@ -312,7 +315,7 @@ export const emitChartUpdateForCoin = async (coinId: string) => {
 export const emitChartUpdateOnMarketChange = async (tokenId: number) => {
   try {
     console.log(
-      `📈 Market data changed for token ${tokenId}, emitting chart updates`
+      `📈 Market data changed for token ${tokenId}, emitting chart updates`,
     );
     await emitChartUpdateForCoin(tokenId.toString());
   } catch (error) {
@@ -324,7 +327,7 @@ export const emitChartUpdateOnMarketChange = async (tokenId: number) => {
 export const emitChartUpdateOnPriceChange = async (tokenId: number) => {
   try {
     console.log(
-      `💰 Price changed for token ${tokenId}, emitting chart updates`
+      `💰 Price changed for token ${tokenId}, emitting chart updates`,
     );
     await emitChartUpdateForCoin(tokenId.toString());
   } catch (error) {
