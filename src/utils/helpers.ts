@@ -1,6 +1,8 @@
 import axios from "axios";
 import { prisma } from "../service/prismaService";
 import { log } from "console";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Default starting value for chart candles (4.4k as per requirement)
 // const DEFAULT_CHART_START_VALUE = 4200;
@@ -297,15 +299,42 @@ export function getTimeframeStartTime(timeframe: string): Date {
   }
 }
 
+// export async function getSolPriceUSD() {
+//   try {
+//     const { data } = await axios.get(
+//       "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT",
+//     );
+//     console.log("Pyth Sol Usd Price", parseFloat(data.price));
+//     return parseFloat(data.price);
+//   } catch (err: any) {
+//     console.error("Binance failed:", err.message);
+//     return 0;
+//   }
+// }
+
+const CMC_API_KEY = process.env.CMC_API_KEY!;
+
 export async function getSolPriceUSD() {
   try {
     const { data } = await axios.get(
-      "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT",
+      "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest",
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": CMC_API_KEY,
+        },
+        params: {
+          symbol: "SOL",
+          convert: "USD",
+        },
+      },
     );
-    console.log("Pyth Sol Usd Price", parseFloat(data.price));
-    return parseFloat(data.price);
+
+    const price = data.data.SOL.quote.USD.price;
+    console.log("CMC SOL USD price:", price);
+
+    return Number(price);
   } catch (err: any) {
-    console.error("Binance failed:", err.message);
+    console.error("CoinMarketCap failed:", err.response?.data || err.message);
     return 0;
   }
 }

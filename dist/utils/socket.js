@@ -176,6 +176,7 @@ exports.initSocket = initSocket;
 // Function to get chart data (same as controller)
 async function getChartData(coinId, timeframe, interval) {
     try {
+        console.log("timeframe", timeframe);
         const startTime = (0, helpers_1.getTimeframeStartTime)(timeframe);
         // First, get the token and market data to understand the current state
         const token = await prisma.token.findFirst({
@@ -196,6 +197,8 @@ async function getChartData(coinId, timeframe, interval) {
         if (!token) {
             throw new Error("Token not found");
         }
+        console.log("token", token);
+        console.log("startTime", startTime);
         const trades = await prisma.trade.findMany({
             where: {
                 tokenId: token.id,
@@ -211,6 +214,7 @@ async function getChartData(coinId, timeframe, interval) {
                 market: true,
             },
         });
+        console.log("trades.lengthcccccc", trades.length);
         // If no trades exist, create a baseline candle from 4.4k to current market cap
         if (trades.length === 0) {
             const { createBaselineCandle } = await Promise.resolve().then(() => __importStar(require("./helpers")));
