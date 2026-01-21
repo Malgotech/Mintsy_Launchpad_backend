@@ -336,15 +336,17 @@ export class TradeController {
         where: { symbol: "SOL" },
       });
       console.log("livePriceDB?.price ", livePriceDB?.price);
-      const livePrice = await getSolPriceUSD();
-      const solPrice = livePriceDB?.price || livePrice;
+      let solPrice = livePriceDB?.price || 0;
+      if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+      }
       console.log("solPrice", solPrice);
 
       let solAmt =
         typeof solAmount === "string" ? Number(solAmount) : solAmount;
       let tokenAmt =
         typeof tokenAmount === "string" ? Number(tokenAmount) : tokenAmount;
-      let marketCapF = Number(marketCap) * solPrice;
+      let marketCapF = Number(marketCap);
       console.log(
         "solAmt,tokenAmount",
         marketCapF,
@@ -481,7 +483,7 @@ export class TradeController {
           await tx.token.update({
             where: { id: tokenIdInt },
             data: {
-              finalMarketCap: marketCapF,
+              finalMarketCap: marketCapF * solPrice,
               lastPrice: pricePerTokenInSol,
               progress,
             },

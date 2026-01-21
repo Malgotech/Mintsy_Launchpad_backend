@@ -44,8 +44,10 @@ export class AdvanceService {
     const livePriceDB = await prisma.liveSolPrice.findUnique({
       where: { symbol: "SOL" },
     });
-    const livePrice = await getSolPriceUSD();
-    const solPrice = livePriceDB?.price || livePrice;
+    let solPrice = livePriceDB?.price || 0;
+    if (livePriceDB?.price == 0) {
+      solPrice = await getSolPriceUSD();
+    }
     const now = new Date();
     const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const volumes = await Promise.all(
@@ -58,16 +60,16 @@ export class AdvanceService {
         });
         const solAmount = trades.reduce(
           (sum: number, t: any) => sum + (Number(t.price) || 0),
-          0
+          0,
         );
         return {
           tokenId: token.id,
           volume: solPrice ? solAmount * solPrice : 0,
         };
-      })
+      }),
     );
     const volumeMap = Object.fromEntries(
-      volumes.map((v) => [v.tokenId, v.volume])
+      volumes.map((v) => [v.tokenId, v.volume]),
     );
     // Compute userCountMap and top10Map for all tokens
     const userCounts = await Promise.all(
@@ -79,10 +81,10 @@ export class AdvanceService {
           },
         });
         return { tokenId: token.id, count };
-      })
+      }),
     );
     const userCountMap = Object.fromEntries(
-      userCounts.map((u) => [u.tokenId, u.count])
+      userCounts.map((u) => [u.tokenId, u.count]),
     );
     const top10Percents = await Promise.all(
       allTokens.map(async (token: any) => {
@@ -98,14 +100,14 @@ export class AdvanceService {
         });
         const top10Sum = top10.reduce(
           (sum: number, ut: any) => sum + (ut.tokenAmount || 0),
-          0
+          0,
         );
         const percent = Number(((top10Sum / token.supply) * 100).toFixed(2));
         return { tokenId: token.id, percent };
-      })
+      }),
     );
     const top10Map = Object.fromEntries(
-      top10Percents.map((t) => [t.tokenId, t.percent])
+      top10Percents.map((t) => [t.tokenId, t.percent]),
     );
     // Now fetch tokens for each column as before
     const [newlyCreated, graduateSoon, featured] = await Promise.all([
@@ -194,7 +196,7 @@ export class AdvanceService {
       columnId?: string;
       status?: string;
       riskLevel?: string;
-    }
+    },
   ): Promise<any> {
     // Changed AdvanceCard to any as it's not exported
     return this.prisma.advanceCard.update({

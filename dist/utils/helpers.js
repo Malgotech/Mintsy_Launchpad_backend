@@ -38,10 +38,12 @@ async function createBaselineCandle(token, startTime, interval) {
     const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
     });
-    const livePrice = await getSolPriceUSD();
-    console.log("DBpricefffffffffff", livePriceDB?.price);
-    const solUsdPrice = livePriceDB?.price || livePrice;
-    const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
+    let solPrice = livePriceDB?.price || 0;
+    if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+    }
+    console.log("solPrice", solPrice);
+    const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solPrice);
     const currentMarketCap = token.market?.marketCap || 0;
     // Use timeframe start time for proper alignment, not current time
     const timestamp = Math.floor(startTime.getTime() / 1000);
@@ -64,14 +66,14 @@ async function createBaselineCandle(token, startTime, interval) {
     };
 }
 // Helper function to calculate market cap from trade data
-function calculateMarketCapFromTrade(trade) {
+function calculateMarketCapFromTrade(trade, solUsdPrice) {
     // Validate trade object
     if (!trade || typeof trade !== "object") {
         return 0;
     }
     // If marketCap is directly available, use it
     if (trade.marketCap !== undefined && trade.marketCap !== null) {
-        const mc = Math.abs(Number(trade.marketCap));
+        const mc = Math.abs(Number(trade.marketCap)) * solUsdPrice;
         return isNaN(mc) ? 0 : mc;
     }
     // If price and amount are available, calculate market cap
@@ -95,10 +97,12 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
     });
-    const livePrice = await getSolPriceUSD();
-    const solUsdPrice = livePriceDB?.price || livePrice;
-    console.log("DBprice", livePriceDB?.price);
-    const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solUsdPrice);
+    let solPrice = livePriceDB?.price || 0;
+    if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+    }
+    console.log("solPrice", solPrice);
+    const DEFAULT_CHART_START_VALUE = Number(27.96) * Number(solPrice);
     if (!trades || trades.length === 0)
         return [];
     let intervalMs = getIntervalInMs(interval);
@@ -137,7 +141,7 @@ async function generateOHLCVCandles(trades, interval, startTime) {
     Object.entries(grouped).forEach(([intervalStart, group], index) => {
         // Calculate market caps using the helper function
         const marketCaps = group
-            .map((t) => calculateMarketCapFromTrade(t))
+            .map((t) => calculateMarketCapFromTrade(t, solPrice))
             .filter((mc) => mc > 0); // Only include valid market cap data
         if (marketCaps.length === 0)
             return; // skip if no valid market cap data

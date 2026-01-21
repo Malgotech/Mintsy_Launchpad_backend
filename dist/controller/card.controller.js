@@ -68,8 +68,10 @@ class CardController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 // For each token, calculate 24h volume in USD
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -217,8 +219,10 @@ class CardController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {
@@ -377,8 +381,10 @@ class CardController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {
@@ -560,8 +566,10 @@ class CardController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {

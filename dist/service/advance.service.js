@@ -33,8 +33,10 @@ class AdvanceService {
         const livePriceDB = await prismaService_1.prisma.liveSolPrice.findUnique({
             where: { symbol: "SOL" },
         });
-        const livePrice = await (0, helpers_1.getSolPriceUSD)();
-        const solPrice = livePriceDB?.price || livePrice;
+        let solPrice = livePriceDB?.price || 0;
+        if (livePriceDB?.price == 0) {
+            solPrice = await (0, helpers_1.getSolPriceUSD)();
+        }
         const now = new Date();
         const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const volumes = await Promise.all(allTokens.map(async (token) => {

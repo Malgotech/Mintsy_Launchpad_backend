@@ -18,7 +18,6 @@ class TokenController {
             try {
                 const { mintAccount, symbol, name, description, imageUrl, cid, decimals = 9, user_account, tags, // Array of tag labels (strings),
                 socials, } = req.body;
-                console.log("Received tags:", tags); // Debug log
                 if (!user_account)
                     return res.status(401).json({ error: "Unauthorized" });
                 // Process optional social links
@@ -57,7 +56,6 @@ class TokenController {
                         }
                     }
                 }
-                console.log("Final tag connections:", tagConnections); // Debug log
                 const token = await prisma.token.create({
                     data: {
                         ...(mintAccount && { mintAccount }),
@@ -185,8 +183,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {
@@ -284,8 +284,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const trades = await prisma.trade.findMany({
@@ -427,8 +429,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {
@@ -684,8 +688,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const trades = await prisma.trade.findMany({
@@ -902,8 +908,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(liveTokens.map(async (token) => {
@@ -965,8 +973,10 @@ class TokenController {
                 const livePriceDB = await prisma.liveSolPrice.findUnique({
                     where: { symbol: "SOL" },
                 });
-                const livePrice = await (0, helpers_1.getSolPriceUSD)();
-                const solPrice = livePriceDB?.price || livePrice;
+                let solPrice = livePriceDB?.price || 0;
+                if (livePriceDB?.price == 0) {
+                    solPrice = await (0, helpers_1.getSolPriceUSD)();
+                }
                 const now = new Date();
                 const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 const volumes = await Promise.all(tokens.map(async (token) => {

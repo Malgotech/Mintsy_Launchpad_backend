@@ -90,8 +90,10 @@ export class CardController {
       const livePriceDB = await prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
       });
-      const livePrice = await getSolPriceUSD();
-      const solPrice = livePriceDB?.price || livePrice;
+      let solPrice = livePriceDB?.price || 0;
+      if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+      }
 
       // For each token, calculate 24h volume in USD
       const now = new Date();
@@ -276,8 +278,11 @@ export class CardController {
       const livePriceDB = await prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
       });
-      const livePrice = await getSolPriceUSD();
-      const solPrice = livePriceDB?.price || livePrice;
+      let solPrice = livePriceDB?.price || 0;
+      if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+      }
+
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(
@@ -468,8 +473,10 @@ export class CardController {
       const livePriceDB = await prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
       });
-      const livePrice = await getSolPriceUSD();
-      const solPrice = livePriceDB?.price || livePrice;
+      let solPrice = livePriceDB?.price || 0;
+      if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+      }
 
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -684,8 +691,10 @@ export class CardController {
       const livePriceDB = await prisma.liveSolPrice.findUnique({
         where: { symbol: "SOL" },
       });
-      const livePrice = await getSolPriceUSD();
-      const solPrice = livePriceDB?.price || livePrice;
+      let solPrice = livePriceDB?.price || 0;
+      if (livePriceDB?.price == 0) {
+        solPrice = await getSolPriceUSD();
+      }
       const now = new Date();
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const volumes = await Promise.all(

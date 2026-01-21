@@ -1,11 +1,7 @@
 // src/socket.ts
 import { Server, Socket } from "socket.io";
 import { PrismaClient } from "@prisma/client";
-import {
-  generateOHLCVCandles,
-  getTimeframeStartTime,
-  getSolPriceUSD,
-} from "./helpers";
+import { generateOHLCVCandles, getTimeframeStartTime } from "./helpers";
 
 let io: Server;
 const prisma = new PrismaClient();
